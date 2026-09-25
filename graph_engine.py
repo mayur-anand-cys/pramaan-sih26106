@@ -79,7 +79,7 @@ def generate_plotly_threat_graph(graph_data: Dict[str, Any]) -> go.Figure:
     Generate an interactive Plotly 2D Network Graph figure from graph data.
     """
     G = graph_data["graph"]
-    pos = nx.spring_layout(G, k=0.5, seed=42)
+    pos = nx.spring_layout(G, k=0.5, iterations=20, seed=42)
 
     # Color map by node type
     color_map = {

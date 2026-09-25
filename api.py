@@ -88,12 +88,9 @@ async def analyze_eml_file(file: UploadFile = File(...)):
     # 3. URL Structural Analysis & Threat Intel
     analyzed_urls = threat_intel.analyze_url_structure(urls)
 
-    # 4. IP Geolocation
-    geo_data = []
-    geo_cache = {}
-    for item in ips:
-        ip_info = threat_intel.geolocate_ip_cached(item["ip"], geo_cache)
-        geo_data.append(ip_info)
+    # 4. Fast Parallel IP Geolocation
+    ip_list = [item["ip"] for item in ips]
+    geo_data = threat_intel.batch_geolocate_ips(ip_list)
 
     # 5. ML Model Prediction
     ml_prob = predict_phishing_probability(full_text)

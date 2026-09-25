@@ -151,7 +151,7 @@ def geolocate_ip_cached(ip: str, cache: Dict[str, dict] = None) -> Dict[str, Any
 
     url = f"http://ip-api.com/json/{ip}?fields=status,message,country,city,isp,as,lat,lon,query"
     try:
-        response = requests.get(url, timeout=3)
+        response = requests.get(url, timeout=1.5)
         if response.status_code == 200:
             data = response.json()
             if data.get("status") == "success":
@@ -168,7 +168,7 @@ def geolocate_ip_cached(ip: str, cache: Dict[str, dict] = None) -> Dict[str, Any
                 if cache is not None:
                     cache[ip] = res
                 return res
-    except Exception as e:
+    except Exception:
         pass
 
     fallback = {
@@ -185,3 +185,13 @@ def geolocate_ip_cached(ip: str, cache: Dict[str, dict] = None) -> Dict[str, Any
     if cache is not None:
         cache[ip] = fallback
     return fallback
+
+def batch_geolocate_ips(ips: List[str], cache: Dict[str, dict] = None) -> List[Dict[str, Any]]:
+    """Perform fast parallel batch geolocation for a list of IP addresses."""
+    from concurrent.futures import ThreadPoolExecutor
+    if not ips:
+        return []
+    
+    with ThreadPoolExecutor(max_workers=min(10, len(ips))) as executor:
+        results = list(executor.map(lambda ip: geolocate_ip_cached(ip, cache), ips))
+    return results

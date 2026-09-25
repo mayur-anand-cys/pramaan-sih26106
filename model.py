@@ -81,14 +81,22 @@ def train_and_save_model(model_path: str = MODEL_FILE) -> Pipeline:
     joblib.dump(pipeline, model_path)
     return pipeline
 
+_MODEL_CACHE = None
+
 def load_or_train_model(model_path: str = MODEL_FILE) -> Pipeline:
-    """Load model if exists, otherwise train and return."""
+    """Load model if exists, otherwise train and return. Caches in memory."""
+    global _MODEL_CACHE
+    if _MODEL_CACHE is not None:
+        return _MODEL_CACHE
+
     if os.path.exists(model_path):
         try:
-            return joblib.load(model_path)
+            _MODEL_CACHE = joblib.load(model_path)
+            return _MODEL_CACHE
         except Exception:
             pass
-    return train_and_save_model(model_path)
+    _MODEL_CACHE = train_and_save_model(model_path)
+    return _MODEL_CACHE
 
 def predict_phishing_probability(text: str, model_path: str = MODEL_FILE) -> float:
     """Return predicted phishing probability (0.0 to 1.0) for given email subject/body text."""
