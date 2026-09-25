@@ -1,14 +1,18 @@
 import os
+import re
 import joblib
+import numpy as np
+import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
-from sklearn.pipeline import Pipeline
+from sklearn.pipeline import Pipeline, FeatureUnion
+from sklearn.base import BaseEstimator, TransformerMixin
 
 MODEL_FILE = os.path.join(os.path.dirname(__file__), "phishing_model.joblib")
 
-# Built-in dataset of 20 phishing examples (label=1) and 20 legitimate examples (label=0)
+# Expanded representative dataset for SOC Phishing Detection
 DATASET = [
-    # Phishing Examples (Label = 1)
+    # --- Phishing Examples (Label = 1) ---
     ("URGENT: Your account has been suspended due to security violations.", 1),
     ("Verify your login details immediately to avoid account termination.", 1),
     ("Action Required: Update billing details and credit card information.", 1),
@@ -29,8 +33,13 @@ DATASET = [
     ("HR Notice: Updated employee benefits handbook. Login required.", 1),
     ("Security Alert: New device signed into your Microsoft 365.", 1),
     ("Invoice payment overdue! Review attached statement immediately.", 1),
+    ("Urgent: Password reset required for corporate VPN access.", 1),
+    ("Account Suspension Notification: Click here to verify identity.", 1),
+    ("Your Amazon account is restricted. Confirm credit card number.", 1),
+    ("Critical security patch required. Download attachment immediately.", 1),
+    ("Wire transfer approval needed for vendor payment invoice #9401.", 1),
 
-    # Legitimate Examples (Label = 0)
+    # --- Legitimate Examples (Label = 0) ---
     ("Weekly team sync meeting notes and action items for Q3.", 0),
     ("Project status update: Sprint 4 backlog refinement completed.", 0),
     ("Lunch invitation for Friday team building event.", 0),
@@ -50,7 +59,12 @@ DATASET = [
     ("Performance review cycle kickoff instructions for managers.", 0),
     ("Welcome to the team! Onboarding checklist for new software engineer.", 0),
     ("Coffee chat invitation to discuss cross-functional collaboration.", 0),
-    ("Minutes from yesterday's architecture review board meeting.", 0)
+    ("Minutes from yesterday's architecture review board meeting.", 0),
+    ("Updated project timeline and delivery roadmap for Q4.", 0),
+    ("Feedback requested on draft RFC for authentication microservice.", 0),
+    ("Office closure announcement for upcoming national holiday.", 0),
+    ("Git commit guidelines and branch naming conventions update.", 0),
+    ("Team outing photos uploaded to shared drive folder.", 0)
 ]
 
 def train_and_save_model(model_path: str = MODEL_FILE) -> Pipeline:
@@ -59,8 +73,8 @@ def train_and_save_model(model_path: str = MODEL_FILE) -> Pipeline:
     labels = [item[1] for item in DATASET]
 
     pipeline = Pipeline([
-        ('tfidf', TfidfVectorizer(ngram_range=(1, 2), min_df=1)),
-        ('clf', LogisticRegression(C=1.0, random_state=42))
+        ('tfidf', TfidfVectorizer(ngram_range=(1, 2), min_df=1, sublinear_tf=True)),
+        ('clf', LogisticRegression(C=1.5, random_state=42))
     ])
 
     pipeline.fit(texts, labels)

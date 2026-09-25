@@ -14,6 +14,8 @@ import pydeck as pdk
 # Import custom modules
 from model import predict_phishing_probability
 import zkfv
+import threat_intel
+import graph_engine
 from report_gen import generate_pdf_report
 
 # Page Configuration
@@ -753,6 +755,13 @@ else:
                 else:
                     st.error("❌ **Verification Failed**: Cryptographic proof mismatch!")
 
+            with st.expander("📜 View Forensic Chain-of-Custody Audit Ledger", expanded=False):
+                audit_logs = zkfv.get_recent_audit_logs(10)
+                if audit_logs:
+                    st.dataframe(pd.DataFrame(audit_logs), use_container_width=True, hide_index=True)
+                else:
+                    st.caption("No audit log entries recorded yet.")
+
             st.markdown("</div>", unsafe_allow_html=True)
 
         # SLIDE 3: ML Classifier & Risk Score Breakdown
@@ -816,20 +825,27 @@ else:
             st.markdown("<div class='soc-card'>", unsafe_allow_html=True)
             st.markdown("### 🔗 Slide 5: Extracted URLs & IPs (Kill Chain Artifacts)", unsafe_allow_html=True)
             
-            st.markdown("#### 🛠️ Infrastructure Relationship Graph")
-            st.code("EMAIL -> DOMAIN -> IP -> ASN -> HOSTING AND EMAIL -> URL", language="text")
+            st.markdown("#### 🛠️ Threat Infrastructure Relationship Graph")
             
-            st.info(
-                "INFRASTRUCTURE GRAPH OF NEO4J RELATIONSHIP GRAPH: EMAIL -> DOMAIN -> IP -> ASN -> HOSTING AND EMAIL -> URL. "
-                "Campaign correlation identifies relationship across multiple image to detect coordinator campaign sharing infrastructure domains and under patterns with explainable threat and uploading it."
-            )
+            # Build and display live entity graph
+            from_hdr = str(msg.get("From", ""))
+            ret_hdr = str(msg.get("Return-Path", ""))
+            graph_data = graph_engine.build_threat_infrastructure_graph(from_hdr, ret_hdr, urls, geo_results)
+            plotly_fig = graph_engine.generate_plotly_threat_graph(graph_data)
+            
+            st.plotly_chart(plotly_fig, use_container_width=True)
 
+            st.caption(f"Network Correlation Summary: {graph_data['num_nodes']} Entities, {graph_data['num_edges']} Threat Relationships")
+
+            st.markdown("---")
             col_u, col_i = st.columns(2)
             with col_u:
-                st.markdown("#### Extracted URLs")
+                st.markdown("#### Extracted URLs & Threat Flags")
                 if urls:
-                    for idx, u in enumerate(urls, 1):
-                        st.code(f"[{idx}] {u}", language="text")
+                    url_analysis = threat_intel.analyze_url_structure(urls)
+                    for idx, u_info in enumerate(url_analysis, 1):
+                        flags_str = f" ⚠️ {', '.join(u_info['flags'])}" if u_info['flags'] else " ✅ Clean"
+                        st.code(f"[{idx}] {u_info['url']}{flags_str}", language="text")
                 else:
                     st.caption("No URLs extracted.")
 

@@ -3,7 +3,30 @@ import datetime
 import email
 from email import policy
 import re
-import ipaddress
+import sqlite3
+import json
+import os
+from typing import Dict, List, Tuple, Any
+
+DB_FILE = os.path.join(os.path.dirname(__file__), "zkfv_ledger.db")
+
+def init_ledger_db(db_path: str = DB_FILE):
+    """Initialize SQLite database table for ZKFV forensic evidence audit logging."""
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS evidence_ledger (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            timestamp TEXT NOT NULL,
+            eml_sha256 TEXT NOT NULL,
+            merkle_root TEXT NOT NULL,
+            leaf_count INTEGER NOT NULL,
+            status TEXT NOT NULL,
+            raw_proof_json TEXT NOT NULL
+        )
+    """)
+    conn.commit()
+    conn.close()
 
 def hash_string(text: str) -> str:
     """Compute SHA-256 hash of string."""
@@ -13,7 +36,7 @@ def hash_bytes(data: bytes) -> str:
     """Compute SHA-256 hash of bytes."""
     return hashlib.sha256(data).hexdigest()
 
-def build_merkle_root(leaf_hashes: list) -> str:
+def build_merkle_root(leaf_hashes: List[str]) -> str:
     """
     Build a Merkle tree from a list of leaf hash strings.
     Returns the Merkle root hash string.
@@ -25,7 +48,6 @@ def build_merkle_root(leaf_hashes: list) -> str:
 
     while len(current_level) > 1:
         next_level = []
-        # If odd number of elements, duplicate last
         if len(current_level) % 2 != 0:
             current_level.append(current_level[-1])
             
@@ -38,9 +60,8 @@ def build_merkle_root(leaf_hashes: list) -> str:
 
     return current_level[0]
 
-def extract_artifacts_for_zkfv(msg: email.message.EmailMessage, eml_bytes: bytes) -> dict:
+def extract_artifacts_for_zkfv(msg: email.message.EmailMessage, eml_bytes: bytes) -> Dict[str, Any]:
     """Extract standard artifacts from email message for cryptographic hashing."""
-    # 1. Headers Summary
     headers = [
         f"Subject:{msg.get('Subject', '')}",
         f"From:{msg.get('From', '')}",
@@ -51,7 +72,6 @@ def extract_artifacts_for_zkfv(msg: email.message.EmailMessage, eml_bytes: bytes
     ]
     headers_str = "\n".join(headers)
 
-    # 2. Body Text
     body_text = ""
     if msg.is_multipart():
         for part in msg.walk():
@@ -70,11 +90,9 @@ def extract_artifacts_for_zkfv(msg: email.message.EmailMessage, eml_bytes: bytes
         except Exception:
             body_text = str(msg.get_payload() or "")
 
-    # 3. URLs
     url_pattern = r'https?://[^\s<>"]+|www\.[^\s<>"]+'
     found_urls = sorted(list(set(re.findall(url_pattern, body_text + " " + headers_str, re.IGNORECASE))))
 
-    # 4. IPs
     ip_pattern = r'\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b'
     found_ips = sorted(list(set(re.findall(ip_pattern, body_text + " " + headers_str))))
 
@@ -85,27 +103,28 @@ def extract_artifacts_for_zkfv(msg: email.message.EmailMessage, eml_bytes: bytes
         "ips": found_ips
     }
 
-def generate_evidence_proof(eml_bytes: bytes) -> dict:
+def generate_evidence_proof(eml_bytes: bytes) -> Dict[str, Any]:
     """
     Generate Zero-Knowledge Forensic Verification (ZKFV) evidence proof dictionary.
-    Includes artifact hashes and Merkle root calculation.
+    Includes artifact hashes, Merkle root calculation, and logs entry in SQLite ledger.
     """
+    init_ledger_db()
     msg = email.message_from_bytes(eml_bytes, policy=policy.default)
     artifacts = extract_artifacts_for_zkfv(msg, eml_bytes)
 
-    # Compute individual artifact hashes
     headers_hash = hash_string(artifacts["headers_str"])
     body_hash = hash_string(artifacts["body_text"])
     url_hashes = [hash_string(u) for u in artifacts["urls"]]
     ip_hashes = [hash_string(ip) for ip in artifacts["ips"]]
     eml_sha256 = hash_bytes(eml_bytes)
 
-    # Ordered list of leaves for Merkle Tree
     leaves = [eml_sha256, headers_hash, body_hash] + url_hashes + ip_hashes
     merkle_root = build_merkle_root(leaves)
 
+    timestamp = datetime.datetime.now(datetime.timezone.utc).isoformat()
+
     proof = {
-        "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        "timestamp": timestamp,
         "eml_sha256": eml_sha256,
         "artifact_hashes": {
             "headers_hash": headers_hash,
@@ -117,9 +136,22 @@ def generate_evidence_proof(eml_bytes: bytes) -> dict:
         "leaf_count": len(leaves)
     }
 
+    # Store in local SQLite audit log
+    try:
+        conn = sqlite3.connect(DB_FILE)
+        cursor = conn.cursor()
+        cursor.execute(
+            "INSERT INTO evidence_ledger (timestamp, eml_sha256, merkle_root, leaf_count, status, raw_proof_json) VALUES (?, ?, ?, ?, ?, ?)",
+            (timestamp, eml_sha256, merkle_root, len(leaves), "REGISTERED", json.dumps(proof))
+        )
+        conn.commit()
+        conn.close()
+    except Exception:
+        pass
+
     return proof
 
-def verify_evidence_proof(eml_bytes: bytes, stored_proof: dict) -> tuple:
+def verify_evidence_proof(eml_bytes: bytes, stored_proof: Dict[str, Any]) -> Tuple[bool, str, str]:
     """
     Recompute Merkle root from EML bytes and compare with stored proof.
     Returns (is_valid: bool, current_root: str, expected_root: str).
@@ -130,3 +162,26 @@ def verify_evidence_proof(eml_bytes: bytes, stored_proof: dict) -> tuple:
     
     is_valid = (current_root == expected_root) and (current_proof["eml_sha256"] == stored_proof.get("eml_sha256"))
     return is_valid, current_root, expected_root
+
+def get_recent_audit_logs(limit: int = 10) -> List[Dict[str, Any]]:
+    """Retrieve recent ZKFV evidence registration records from SQLite ledger."""
+    init_ledger_db()
+    logs = []
+    try:
+        conn = sqlite3.connect(DB_FILE)
+        cursor = conn.cursor()
+        cursor.execute("SELECT id, timestamp, eml_sha256, merkle_root, leaf_count, status FROM evidence_ledger ORDER BY id DESC LIMIT ?", (limit,))
+        rows = cursor.fetchall()
+        for r in rows:
+            logs.append({
+                "id": r[0],
+                "timestamp": r[1],
+                "eml_sha256": r[2],
+                "merkle_root": r[3],
+                "leaf_count": r[4],
+                "status": r[5]
+            })
+        conn.close()
+    except Exception:
+        pass
+    return logs

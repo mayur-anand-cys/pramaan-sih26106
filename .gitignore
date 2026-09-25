@@ -8,6 +8,10 @@ env/
 # Trained model (regenerate with: python model.py)
 *.joblib
 
+# Database & Audit Ledger
+*.db
+zkfv_ledger.db
+
 # Generated PDF reports
 forensic_report.pdf
 
