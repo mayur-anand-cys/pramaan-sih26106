@@ -29,6 +29,51 @@ st.set_page_config(
 # Custom SOC / SIEM CSS Theme Injection
 st.markdown("""
     <style>
+    /* Kill top padding */
+.block-container {
+    padding-top: 1rem !important;
+    padding-bottom: 1rem !important;
+}
+
+/* Tighten sidebar top padding */
+section[data-testid="stSidebar"] > div:first-child {
+    padding-top: 0.5rem !important;
+}
+
+/* Hide Streamlit header bar */
+header[data-testid="stHeader"] {
+    height: 0 !important;
+    background: transparent !important;
+}
+
+/* Fix threat score card overflow */
+.threat-score-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 12px 18px;
+    background: #12151a;
+    border: 1px solid #1e293b;
+    border-radius: 8px;
+    white-space: nowrap;
+}
+.threat-score-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.6rem;
+    font-weight: 700;
+    line-height: 1;
+}
+.threat-score-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    white-space: nowrap;
+    letter-spacing: 0.5px;
+}
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 
     html, body, [data-testid="stAppViewContainer"] {
@@ -534,11 +579,7 @@ with st.sidebar:
     st.markdown("### ⚙️ SOC Data Source")
     use_sample = st.checkbox("🧪 Use Sample Phishing EML", value=False)
     uploaded_file = st.file_uploader("Upload .eml File", type=["eml"])
-    
-    st.markdown("---")
-    st.markdown("### 🛠️ Platform Status")
-    st.markdown("<span class='badge-pass'>SYSTEM ONLINE</span>", unsafe_allow_html=True)
-    st.caption("PRAMAAN v2.4 Forensic Engine")
+
 
 raw_bytes = None
 file_name = ""
@@ -627,52 +668,22 @@ else:
     # --- Top Header & Threat Gauge ---
     hdr_col1, hdr_col2 = st.columns([3, 1])
 
-    with hdr_col1:
-        st.markdown("<div class='soc-header'>🛡️ PRAMAAN FORENSIC DASHBOARD</div>", unsafe_allow_html=True)
-        st.markdown(f"<div class='soc-subtitle'>AI-Powered Threat Intelligence & Digital Forensics Platform | Target: <code class='mono-font'>{file_name}</code></div>", unsafe_allow_html=True)
-
     with hdr_col2:
         st.markdown(f"""
-        <div style="background-color: #12151a; border: 1px solid #1e293b; border-radius: 8px; padding: 10px 16px; display: flex; align-items: center; justify-content: space-between;">
+        <div class="threat-score-card">
             <div>
                 <div style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; color: #64748b; font-weight: 600;">Threat Score</div>
-                <div style="font-size: 1.6rem; font-weight: 700; color: {risk_color}; font-family: 'JetBrains Mono', monospace;">
+                <div class="threat-score-value" style="color: {risk_color};">
                     {risk_score} <span style="font-size: 0.85rem; color: #64748b;">/ 100</span>
                 </div>
             </div>
-            <div style="text-align: right;">
-                <span style="background-color: {risk_color}20; border: 1px solid {risk_color}; color: {risk_color}; padding: 3px 8px; border-radius: 4px; font-weight: 700; font-size: 0.75rem; font-family: 'JetBrains Mono', monospace;">
-                    {risk_level}
-                </span>
-            </div>
+            <span class="threat-score-badge" style="background-color: {risk_color}20; border: 1px solid {risk_color}; color: {risk_color};">
+                {risk_level}
+            </span>
         </div>
         """, unsafe_allow_html=True)
 
     st.markdown("---")
-
-    # --- Top Stepper Dots ---
-    slide_labels = [
-        "1. Header Summary",
-        "2. Authentication",
-        "3. ML Classifier",
-        "4. IP Geolocation",
-        "5. Kill Chain",
-        "6. Final Verdict"
-    ]
-
-    stepper_cols = st.columns(6)
-    for idx, label in enumerate(slide_labels):
-        with stepper_cols[idx]:
-            if st.session_state.slide == idx:
-                dot_class = "stepper-dot-active"
-            elif st.session_state.slide > idx:
-                dot_class = "stepper-dot-visited"
-            else:
-                dot_class = "stepper-dot"
-            
-            st.markdown(f"<div><span class='{dot_class}'>{idx + 1}</span><span style='font-size: 0.8rem; font-weight: 600; color: #94a3b8;'>{label.split('. ')[1]}</span></div>", unsafe_allow_html=True)
-
-    st.markdown("<div style='margin-bottom: 20px;'></div>", unsafe_allow_html=True)
 
     # --- Left Rail & Main Pane Layout ---
     left_rail, main_pane = st.columns([1, 4])
@@ -702,7 +713,7 @@ else:
         # SLIDE 1: Header Summary
         if current_slide == 0:
             st.markdown("<div class='soc-card'>", unsafe_allow_html=True)
-            st.markdown("### 📋 Slide 1: Header Summary & Metadata", unsafe_allow_html=True)
+            st.markdown("### Header Summary & Metadata", unsafe_allow_html=True)
             st.caption("Extracted MIME headers in normalized key-value format.")
             
             for k, v in headers_dict.items():
@@ -714,7 +725,7 @@ else:
         # SLIDE 2: Authentication Evidence
         elif current_slide == 1:
             st.markdown("<div class='soc-card'>", unsafe_allow_html=True)
-            st.markdown("### 🛡️ Slide 2: Authentication Evidence & Cryptographic Proof", unsafe_allow_html=True)
+            st.markdown("### Authentication Evidence & Cryptographic Proof", unsafe_allow_html=True)
             
             ac1, ac2, ac3 = st.columns(3)
             with ac1:
@@ -748,7 +759,7 @@ else:
             st.markdown("#### 🔒 Zero-Knowledge Forensic Verification (ZKFV) Merkle Root")
             st.code(merkle_root, language="text")
 
-            if st.button("🛡️ Verify Evidence Integrity", use_container_width=True):
+            if st.button(" Verify Evidence Integrity", use_container_width=True):
                 is_valid, curr_root, exp_root = zkfv.verify_evidence_proof(raw_bytes, zkfv_proof)
                 if is_valid:
                     st.success("✅ **Evidence Verified**: Merkle root matches cryptographic proof!")
@@ -767,7 +778,7 @@ else:
         # SLIDE 3: ML Classifier & Risk Score Breakdown
         elif current_slide == 2:
             st.markdown("<div class='soc-card'>", unsafe_allow_html=True)
-            st.markdown("### 🤖 Slide 3: ML Classifier & Risk Factor Breakdown", unsafe_allow_html=True)
+            st.markdown("### ML Classifier & Risk Factor Breakdown", unsafe_allow_html=True)
             
             st.markdown(f"**TF-IDF + Logistic Regression Phishing Probability**: `<font color='#7dd3fc'>{ml_prob * 100:.2f}%</font>`", unsafe_allow_html=True)
             
@@ -794,7 +805,7 @@ else:
         # SLIDE 4: IP Geolocation
         elif current_slide == 3:
             st.markdown("<div class='soc-card'>", unsafe_allow_html=True)
-            st.markdown("### 🌐 Slide 4: IP Geolocation & Network Intelligence", unsafe_allow_html=True)
+            st.markdown("### IP Geolocation & Network Intelligence", unsafe_allow_html=True)
             
             geo_map_data = []
             for g in geo_results:
@@ -823,7 +834,7 @@ else:
         # SLIDE 5: Extracted URLs & IPs (Kill Chain & Graph Correlation)
         elif current_slide == 4:
             st.markdown("<div class='soc-card'>", unsafe_allow_html=True)
-            st.markdown("### 🔗 Slide 5: Extracted URLs & IPs (Kill Chain Artifacts)", unsafe_allow_html=True)
+            st.markdown("### Extracted URLs & IPs (Kill Chain Artifacts)", unsafe_allow_html=True)
             
             st.markdown("#### 🛠️ Threat Infrastructure Relationship Graph")
             
@@ -862,7 +873,7 @@ else:
         # SLIDE 6: Final Threat Assessment & Verdict
         elif current_slide == 5:
             st.markdown("<div class='soc-card'>", unsafe_allow_html=True)
-            st.markdown("### 📊 Slide 6: Final Threat Assessment & Incident Verdict", unsafe_allow_html=True)
+            st.markdown("### Final Threat Assessment & Incident Verdict", unsafe_allow_html=True)
             
             v_col1, v_col2 = st.columns(2)
             with v_col1:
