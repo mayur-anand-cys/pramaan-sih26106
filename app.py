@@ -530,8 +530,16 @@ def calculate_risk_score(
 # --- Sidebar Setup ---
 with st.sidebar:
     st.markdown("### ⚙️ SOC Data Source")
-    use_sample = st.checkbox("🧪 Use Sample Phishing EML", value=False)
-    uploaded_file = st.file_uploader("Upload .eml File", type=["eml"])
+    use_sample = st.checkbox(
+        "🧪 Use Sample Phishing EML",
+        value=False,
+        help="Load a pre-configured sample phishing EML file to explore platform capabilities instantly."
+    )
+    uploaded_file = st.file_uploader(
+        "Upload .eml File",
+        type=["eml"],
+        help="Upload a raw .eml email file to extract MIME headers, URLs, IP artifacts, and generate cryptographic evidence."
+    )
     
     st.markdown("---")
     st.markdown("### 🛠️ Platform Status")
@@ -556,7 +564,7 @@ if raw_bytes is None:
     st.markdown("<div class='soc-card'>", unsafe_allow_html=True)
     st.markdown("<div class='soc-header'>🛡️ PRAMAAN Threat Intelligence</div>", unsafe_allow_html=True)
     st.markdown("<div class='soc-subtitle'>AI-Powered Threat Intelligence & Digital Forensics Platform</div>", unsafe_allow_html=True)
-    st.warning("👈 Please upload an `.eml` file using the sidebar or check 'Use Sample Phishing EML' to initiate investigation.")
+    st.warning("👈 **No Artifact Selected**: Please upload an `.eml` file in the sidebar or toggle **'Use Sample Phishing EML'** to begin forensic analysis.")
     st.markdown("</div>", unsafe_allow_html=True)
     st.stop()
 else:
@@ -746,7 +754,7 @@ else:
             st.markdown("#### 🔒 Zero-Knowledge Forensic Verification (ZKFV) Merkle Root")
             st.code(merkle_root, language="text")
 
-            if st.button("🛡️ Verify Evidence Integrity", use_container_width=True):
+            if st.button("🛡️ Verify Evidence Integrity", help="Re-calculate and verify the Merkle tree root against extracted email artifacts to ensure tamper-proof evidence.", use_container_width=True):
                 is_valid, curr_root, exp_root = zkfv.verify_evidence_proof(raw_bytes, zkfv_proof)
                 if is_valid:
                     st.success("✅ **Evidence Verified**: Merkle root matches cryptographic proof!")
@@ -831,7 +839,7 @@ else:
                     for idx, u in enumerate(urls, 1):
                         st.code(f"[{idx}] {u}", language="text")
                 else:
-                    st.caption("No URLs extracted.")
+                    st.info("ℹ️ No extracted URLs found in this email artifact.")
 
             with col_i:
                 st.markdown("#### Extracted IP Addresses")
@@ -839,7 +847,7 @@ else:
                     for idx, item in enumerate(ips, 1):
                         st.code(f"[{idx}] {item['ip']} (Private: {item['is_private']})", language="text")
                 else:
-                    st.caption("No IP addresses extracted.")
+                    st.info("ℹ️ No extracted IP addresses found in this email artifact.")
 
             st.markdown("</div>", unsafe_allow_html=True)
 
@@ -861,6 +869,7 @@ else:
                     data=pdf_bytes,
                     file_name="forensic_report.pdf",
                     mime="application/pdf",
+                    help="Export a comprehensive PDF report containing threat factors, header breakdown, geolocation, and Merkle root proof.",
                     use_container_width=True
                 )
 
