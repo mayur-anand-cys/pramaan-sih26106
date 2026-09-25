@@ -28,58 +28,58 @@ st.set_page_config(
 
 # Custom SOC / SIEM CSS Theme Injection
 st.markdown("""
-    <style>
-    /* Kill top padding */
-.block-container {
-    padding-top: 1rem !important;
-    padding-bottom: 1rem !important;
-}
-
-/* Tighten sidebar top padding */
-section[data-testid="stSidebar"] > div:first-child {
-    padding-top: 0.5rem !important;
-}
-
-/* Hide Streamlit header bar */
-header[data-testid="stHeader"] {
-    height: 0 !important;
-    background: transparent !important;
-}
-
-/* Fix threat score card overflow */
-.threat-score-card {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-    padding: 12px 18px;
-    background: #12151a;
-    border: 1px solid #1e293b;
-    border-radius: 8px;
-    white-space: nowrap;
-}
-.threat-score-value {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 1.6rem;
-    font-weight: 700;
-    line-height: 1;
-}
-.threat-score-badge {
-    display: inline-block;
-    padding: 4px 10px;
-    border-radius: 4px;
-    font-size: 0.7rem;
-    font-weight: 700;
-    font-family: 'JetBrains Mono', monospace;
-    white-space: nowrap;
-    letter-spacing: 0.5px;
-}
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 
     html, body, [data-testid="stAppViewContainer"] {
         background-color: #0b0d10 !important;
         color: #e2e8f0 !important;
         font-family: 'Inter', sans-serif !important;
+    }
+
+    /* Kill top padding */
+    .block-container {
+        padding-top: 1rem !important;
+        padding-bottom: 1rem !important;
+    }
+
+    /* Tighten sidebar top padding */
+    section[data-testid="stSidebar"] > div:first-child {
+        padding-top: 0.5rem !important;
+    }
+
+    /* Hide Streamlit header bar */
+    header[data-testid="stHeader"] {
+        height: 0 !important;
+        background: transparent !important;
+    }
+
+    /* Fix threat score card overflow */
+    .threat-score-card {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 12px 18px;
+        background: #12151a;
+        border: 1px solid #1e293b;
+        border-radius: 8px;
+        white-space: nowrap;
+    }
+    .threat-score-value {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 1.6rem;
+        font-weight: 700;
+        line-height: 1;
+    }
+    .threat-score-badge {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 4px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        font-family: 'JetBrains Mono', monospace;
+        white-space: nowrap;
+        letter-spacing: 0.5px;
     }
     
     [data-testid="stHeader"] {
@@ -667,6 +667,10 @@ else:
 
     # --- Top Header & Threat Gauge ---
     hdr_col1, hdr_col2 = st.columns([3, 1])
+
+    with hdr_col1:
+        st.markdown("<div class='soc-header'>🛡️ PRAMAAN FORENSIC DASHBOARD</div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='soc-subtitle'>AI-Powered Threat Intelligence & Digital Forensics Platform | Target: <code class='mono-font'>{file_name}</code></div>", unsafe_allow_html=True)
 
     with hdr_col2:
         st.markdown(f"""
