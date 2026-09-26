@@ -8,3 +8,5 @@ fastapi>=0.100.0
 uvicorn>=0.20.0
 networkx>=3.0
 plotly>=5.15.0
+web3>=7.4.0
+eth-account>=0.11.0
