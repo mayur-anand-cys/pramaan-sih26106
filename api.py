@@ -12,6 +12,7 @@ from model import predict_phishing_probability
 import zkfv
 import threat_intel
 import graph_engine
+import neo4j_engine
 
 app = FastAPI(
     title="PRAMAAN Threat Intelligence & Digital Forensics API",
@@ -106,7 +107,20 @@ async def analyze_eml_file(file: UploadFile = File(...)):
     # 8. Infrastructure Graph Construction
     graph_data = graph_engine.build_threat_infrastructure_graph(from_header, return_path, urls, geo_data)
 
-    # 9. ZKFV Evidence Proof Generation
+    # 9. Neo4j Campaign Graph Ingestion
+    all_domains = [domain_alignment.get("from_domain"), domain_alignment.get("return_domain")]
+    all_domains = [d for d in all_domains if d]
+    neo4j_res = neo4j_engine.ingest_threat_data(
+        sha256=sha256_hash,
+        sender=from_header,
+        return_path=return_path,
+        domains=all_domains,
+        ips=ip_list,
+        urls=urls,
+        risk_score=risk_score
+    )
+
+    # 10. ZKFV Evidence Proof Generation
     zkfv_proof = zkfv.generate_evidence_proof(raw_bytes)
 
     risk_level = "HIGH RISK" if risk_score >= 65 else ("MODERATE RISK" if risk_score >= 35 else "LOW RISK")
@@ -136,6 +150,7 @@ async def analyze_eml_file(file: UploadFile = File(...)):
             "nodes": graph_data["nodes"],
             "edges": graph_data["edges"]
         },
+        "neo4j_ingestion": neo4j_res,
         "zkfv_proof": zkfv_proof
     }
 
@@ -159,6 +174,28 @@ async def verify_zkfv_proof(file: UploadFile = File(...), proof_json: str = Quer
 def get_audit_ledger(limit: int = 20):
     """Retrieve evidence audit ledger entries from SQLite database."""
     return zkfv.get_recent_audit_logs(limit)
+
+@app.get("/api/v1/neo4j/status")
+def get_neo4j_status():
+    """Return Neo4j connection status and configuration."""
+    return neo4j_engine.test_connection()
+
+@app.get("/api/v1/campaigns")
+def get_campaign_correlations():
+    """Retrieve cross-email correlated threat campaigns from Neo4j / graph store."""
+    campaigns = neo4j_engine.correlate_campaigns()
+    return {
+        "count": len(campaigns),
+        "campaigns": campaigns
+    }
+
+@app.get("/api/v1/campaigns/{campaign_id}")
+def get_campaign_by_id(campaign_id: str):
+    """Retrieve details and correlated email metadata for a specific campaign cluster."""
+    details = neo4j_engine.get_campaign_details(campaign_id)
+    if not details.get("found"):
+        raise HTTPException(status_code=404, detail=f"Campaign '{campaign_id}' not found.")
+    return details
 
 def extract_body_from_msg(msg: email.message.EmailMessage) -> str:
     body = ""
