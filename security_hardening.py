@@ -165,8 +165,8 @@ def detect_lookalike_with_valid_auth(from_domain: str, auth_results: Dict) -> Di
 
 
 def strip_hidden_content(html_body: str) -> str:
-    html_body = re.sub(r'<style[^>]*>.*?</style>', '', html_body, flags=re.DOTALL | re.IGNORECASE)
-    html_body = re.sub(r'<script[^>]*>.*?</script>', '', html_body, flags=re.DOTALL | re.IGNORECASE)
+    html_body = re.sub(r'<style\b[^>]*>.*?</style\b[^>]*>', '', html_body, flags=re.DOTALL | re.IGNORECASE)
+html_body = re.sub(r'<script\b[^>]*>.*?</script\b[^>]*>', '', html_body, flags=re.DOTALL | re.IGNORECASE)
     invisible_patterns = [
         r'display\s*:\s*none', r'visibility\s*:\s*hidden',
         r'opacity\s*:\s*0(?:\.0+)?\b', r'font-size\s*:\s*0',
