@@ -295,6 +295,63 @@ def generate_pdf_report(
     elements.append(custody_table)
     elements.append(Spacer(1, 12))
 
+        # Contradiction Alerts
+    contradictions = []
+
+    # Contradiction 1: From-domain vs sender IP country
+    from_header = headers_dict.get("From", "")
+    if "@" in from_header and geo_data:
+        for geo in geo_data:
+            country = geo.get("country", "")
+            if country and country.lower() not in ("unknown", "private", ""):
+                # Simple heuristic: flag if sender domain looks corporate but IP is in unusual location
+                if any(kw in from_header.lower() for kw in ["bank", "paypal", "github", "microsoft", "google", "amazon"]):
+                    contradictions.append(
+                        f"Sender claims to be from a known brand, but source IP resolves to {country}."
+                    )
+                break
+
+    # Contradiction 2: High ML score but no URLs/IPs
+    if ml_prob > 0.7 and not urls and not ips:
+        contradictions.append(
+            "ML model flagged high phishing probability, but no URLs or IPs were extracted."
+        )
+
+    # Contradiction 3: Low ML score but high risk factors
+    if ml_prob < 0.3 and len(risk_factors) >= 3:
+        contradictions.append(
+            "ML model shows low phishing probability, but multiple risk factors were detected."
+        )
+
+    # Contradiction 4: Missing critical headers
+    missing = [h for h in ["Return-Path", "Message-ID"] if headers_dict.get(h, "N/A") == "N/A"]
+    if missing:
+        contradictions.append(
+            f"Critical headers missing: {', '.join(missing)}. This may indicate spoofing."
+        )
+
+    if contradictions:
+        elements.append(Paragraph("<b>Contradiction Alerts</b>", h2_style))
+        elements.append(Spacer(1, 6))
+
+        contra_data = [["#", "Alert"]]
+        for i, c in enumerate(contradictions, 1):
+            contra_data.append([str(i), Paragraph(c, body_style)])
+
+        contra_table = Table(contra_data, colWidths=[30, 510])
+        contra_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#DC2626')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor('#FEF2F2')),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#FCA5A5')),
+            ('PADDING', (0, 0), (-1, -1), 6),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ]))
+
+        elements.append(contra_table)
+        elements.append(Spacer(1, 12))
+
         # Blockchain Anchoring
     elements.append(Paragraph("<b>Blockchain Anchoring</b>", h2_style))
     elements.append(Spacer(1, 6))
