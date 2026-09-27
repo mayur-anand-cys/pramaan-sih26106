@@ -2,6 +2,7 @@ import email
 from email import policy
 import hashlib
 import json
+import logging
 import uvicorn
 from fastapi import FastAPI, File, UploadFile, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
@@ -22,6 +23,8 @@ from backend.detection.xai import (
     LEDGER_DB_FILE
 )
 
+
+logger = logging.getLogger(__name__)
 
 app = FastAPI(
     title="PRAMAAN Threat Intelligence & Digital Forensics API",
@@ -261,8 +264,14 @@ def get_xai_audit(email_id: str):
                 "contradiction": json.loads(r[7]) if r[7] else {}
             })
         return {"email_id": email_id, "count": len(records), "records": records}
-    except Exception as exc:
-        return {"email_id": email_id, "count": 0, "records": [], "error": str(exc)}
+    except Exception:
+        logger.exception("Failed to retrieve XAI audit for email_id=%s", email_id)
+        return {
+            "email_id": email_id,
+            "count": 0,
+            "records": [],
+            "error": "An internal error occurred while retrieving audit data."
+        }
 
 
 @app.get("/api/v1/neo4j/status")
