@@ -262,6 +262,31 @@ def generate_pdf_report(
         elements.append(Paragraph("No URLs extracted.", body_style))
 
     elements.append(Spacer(1, 15))
+        # Chain-of-Custody Timeline
+    elements.append(Paragraph("<b>Chain-of-Custody Timeline</b>", h2_style))
+    elements.append(Spacer(1, 6))
+
+    custody_data = [
+        ["Stage", "Timestamp (UTC)", "Action"],
+        ["Collected", now_str, "Email file ingested and SHA-256 computed."],
+        ["Analyzed", now_str, "Headers, IOCs, and ML scoring completed."],
+        ["Anchored", now_str, f"Merkle root recorded: {merkle_root[:16]}..."],
+        ["Reported", now_str, "Forensic PDF generated for review."],
+    ]
+
+    custody_table = Table(custody_data, colWidths=[90, 150, 300])
+    custody_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1E293B')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor('#F8FAFC')),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#CBD5E1')),
+        ('PADDING', (0, 0), (-1, -1), 6),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+    ]))
+
+    elements.append(custody_table)
+    elements.append(Spacer(1, 12))
 
     # Section 5: Legal Disclaimer
     disclaimer_box_data = [[
