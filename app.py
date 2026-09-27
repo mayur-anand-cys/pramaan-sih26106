@@ -1,4 +1,5 @@
 import streamlit as st
+import datetime
 import email
 from email import policy
 import re
@@ -569,7 +570,9 @@ pdf_bytes = generate_pdf_report(
     geo_data=geo_results,
     risk_factors=risk_factors,
     ml_prob=ml_prob,
-    merkle_root=merkle_root
+    merkle_root=merkle_root,
+    case_id=f"PRAMAAN-{datetime.datetime.now().strftime('%Y%m%d-%H%M%S')}",
+    analyst="Sneha Namrath",
 )
 
 # --- TOP MAIN HEADER (Flush with top) ---

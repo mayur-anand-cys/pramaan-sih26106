@@ -6,6 +6,11 @@ from reportlab.platypus import (
     SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, KeepTogether
 )
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+try:
+    from blockchain.anchor import anchor_evidence
+except ImportError:
+    anchor_evidence = None
+
 
 def generate_pdf_report(
     sha256_hash: str,
@@ -18,6 +23,8 @@ def generate_pdf_report(
     risk_factors: list,
     ml_prob: float,
     merkle_root: str,
+    case_id: str = "PRAMAAN-AUTO",
+    analyst: str = "Sneha Namrath",
     filename: str = "forensic_report.pdf"
 ) -> bytes:
     """Generate a comprehensive forensic PDF report using reportlab."""
@@ -286,6 +293,47 @@ def generate_pdf_report(
     ]))
 
     elements.append(custody_table)
+    elements.append(Spacer(1, 12))
+
+        # Blockchain Anchoring
+    elements.append(Paragraph("<b>Blockchain Anchoring</b>", h2_style))
+    elements.append(Spacer(1, 6))
+
+    if anchor_evidence is not None:
+        anchor_result = anchor_evidence(
+            case_id=case_id,
+            merkle_root=merkle_root,
+            file_sha256=sha256_hash,
+            classification=risk_level,
+        )
+        blockchain_tx = anchor_result.get("tx_hash") or "Not anchored"
+        etherscan_url = anchor_result.get("explorer_url") or "Not available"
+        storage_status = anchor_result.get("storage", "UNKNOWN")
+    else:
+        blockchain_tx = "Blockchain module not available"
+        etherscan_url = "N/A"
+        storage_status = "N/A"
+
+    chain_data = [
+        ["Field", "Value"],
+        ["Storage", storage_status],
+        ["Merkle Root", f"{merkle_root[:32]}..."],
+        ["Blockchain TX", f"{blockchain_tx[:40]}..."],
+        ["Explorer Link", etherscan_url],
+    ]
+
+    chain_table = Table(chain_data, colWidths=[120, 420])
+    chain_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1E293B')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor('#F8FAFC')),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#CBD5E1')),
+        ('PADDING', (0, 0), (-1, -1), 6),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+    ]))
+
+    elements.append(chain_table)
     elements.append(Spacer(1, 12))
 
     # Section 5: Legal Disclaimer
