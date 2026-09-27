@@ -19,6 +19,14 @@ import threat_intel
 import graph_engine
 import neo4j_engine
 from report_gen import generate_pdf_report
+from backend.detection.auth_check import verify_email_auth
+from backend.detection.xai import (
+    detect_contradictions,
+    explain_prediction,
+    flag_for_analyst_review,
+    log_contradiction_to_audit
+)
+
 
 # Page Configuration
 st.set_page_config(
@@ -531,6 +539,31 @@ ml_prob = predict_phishing_probability(full_text_for_ml)
 # Risk Calculation
 risk_score, risk_factors = calculate_risk_score(msg, body_text, urls, ips, auth_info, ml_prob)
 
+# Email Authentication & XAI Contradiction Analysis
+raw_text = raw_bytes.decode('utf-8', errors='replace')
+try:
+    source_ip = ips[0]["ip"] if ips else None
+    auth_verification = verify_email_auth(raw_text, source_ip=source_ip)
+except Exception:
+    auth_verification = {
+        "spf": {"dns_result": auth_info.get("spf", "none").lower(), "header_result": auth_info.get("spf", "none").lower()},
+        "dkim": {"dns_result": auth_info.get("dkim", "none").lower(), "header_result": auth_info.get("dkim", "none").lower()},
+        "dmarc": {"dns_result": auth_info.get("dmarc", "none").lower(), "header_result": auth_info.get("dmarc", "none").lower()},
+        "header_trust_score": 50
+    }
+
+ml_result = {
+    "probability": ml_prob,
+    "prediction": "phishing" if ml_prob >= 0.5 else "legitimate",
+    "confidence": round(abs(ml_prob - 0.5) * 200, 2),
+    "threat_score": float(risk_score)
+}
+xai_result = detect_contradictions(ml_result, auth_verification)
+xai_explanation = explain_prediction(raw_text, ml_result)
+
+if xai_result.get("has_contradiction"):
+    log_contradiction_to_audit(xai_result, email_id=sha256_hash)
+
 # ZKFV Proof Generation
 zkfv_proof = zkfv.generate_evidence_proof(raw_bytes)
 merkle_root = zkfv_proof["merkle_root"]
@@ -576,15 +609,24 @@ pdf_bytes = generate_pdf_report(
 top_col1, top_col2 = st.columns([3, 1])
 
 with top_col1:
+    analyst_badge = ""
+    if xai_result.get("requires_analyst_review"):
+        analyst_badge = """
+        <span style="background-color: rgba(239, 68, 68, 0.18); border: 1.5px solid #ef4444; color: #ef4444; padding: 4px 12px; border-radius: 6px; font-weight: 800; font-size: 0.85rem; font-family: 'JetBrains Mono', monospace; margin-left: 12px; display: inline-block; vertical-align: middle;">
+            ⚠️ ANALYST REVIEW REQUIRED
+        </span>
+        """
     st.markdown(f"""
     <div style="margin-top: -15px; margin-bottom: 8px;">
         <span style="font-size: 1.4rem; font-weight: 800; color: #f8fafc;">🛡️ Target Artifact:</span> 
         <code style="font-size: 1.2rem; color: #7dd3fc; background-color: #1e293b; padding: 4px 10px; border-radius: 6px;">{file_name}</code>
+        {analyst_badge}
     </div>
     """, unsafe_allow_html=True)
     if st.button("🔄 Upload another .eml", key="reset_btn"):
         st.session_state.clear()
         st.rerun()
+
 
 with top_col2:
     btn_c1, btn_c2 = st.columns(2)
@@ -630,6 +672,63 @@ tab1, tab2, tab3, tab4, tab5 = st.tabs([
 # ==========================================
 with tab1:
     st.markdown("<div class='soc-card'>", unsafe_allow_html=True)
+
+    # CONTRADICTION ALERTS BANNER (Issue #4)
+    if xai_result.get("severity") == "CRITICAL":
+        crit_alerts = [a for a in xai_result.get("alerts", []) if a.get("severity") == "CRITICAL"]
+        alert_desc = crit_alerts[0].get("description") if crit_alerts else "AI verdict directly conflicts with cryptographic authentication failure."
+        st.markdown(f"""
+        <div style="background: linear-gradient(135deg, rgba(239, 68, 68, 0.25) 0%, rgba(153, 27, 27, 0.35) 100%);
+                    border: 2px solid #ef4444; border-radius: 8px; padding: 16px 20px; margin-bottom: 20px;">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+                <div style="display: flex; align-items: center; gap: 14px;">
+                    <span style="font-size: 2.2rem;">🚨</span>
+                    <div>
+                        <h3 style="color: #ef4444; margin: 0; font-size: 1.25rem; font-weight: 800;">CRITICAL XAI CONTRADICTION DETECTED</h3>
+                        <p style="color: #fca5a5; margin: 4px 0 0 0; font-size: 0.95rem;">{alert_desc}</p>
+                    </div>
+                </div>
+                <span style="background-color: #ef4444; color: #ffffff; padding: 6px 14px; border-radius: 9999px; font-weight: 800; font-size: 0.85rem; letter-spacing: 0.05em;">
+                    ⚠️ ANALYST REVIEW REQUIRED
+                </span>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+    elif xai_result.get("severity") == "HIGH":
+        high_alerts = [a for a in xai_result.get("alerts", []) if a.get("severity") == "HIGH"]
+        alert_desc = high_alerts[0].get("description") if high_alerts else "AI flagged email as phishing but authentication passed."
+        st.markdown(f"""
+        <div style="background: linear-gradient(135deg, rgba(249, 115, 22, 0.2) 0%, rgba(194, 65, 12, 0.25) 100%);
+                    border: 2px solid #f97316; border-radius: 8px; padding: 16px 20px; margin-bottom: 20px;">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+                <div style="display: flex; align-items: center; gap: 14px;">
+                    <span style="font-size: 2.2rem;">⚠️</span>
+                    <div>
+                        <h3 style="color: #f97316; margin: 0; font-size: 1.25rem; font-weight: 800;">HIGH XAI CONTRADICTION — POTENTIAL FALSE POSITIVE</h3>
+                        <p style="color: #fdba74; margin: 4px 0 0 0; font-size: 0.95rem;">{alert_desc}</p>
+                    </div>
+                </div>
+                <span style="background-color: #f97316; color: #ffffff; padding: 6px 14px; border-radius: 9999px; font-weight: 800; font-size: 0.85rem; letter-spacing: 0.05em;">
+                    ⚠️ ANALYST REVIEW REQUIRED
+                </span>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+    elif xai_result.get("severity") == "AMBER":
+        amber_alerts = [a for a in xai_result.get("alerts", []) if a.get("severity") == "AMBER"]
+        alert_desc = amber_alerts[0].get("description") if amber_alerts else "Low model confidence amidst high threat score."
+        st.markdown(f"""
+        <div style="background: linear-gradient(135deg, rgba(234, 179, 8, 0.2) 0%, rgba(161, 98, 7, 0.25) 100%);
+                    border: 2px solid #eab308; border-radius: 8px; padding: 14px 18px; margin-bottom: 20px;">
+            <div style="display: flex; align-items: center; gap: 14px;">
+                <span style="font-size: 2rem;">⚡</span>
+                <div>
+                    <h3 style="color: #eab308; margin: 0; font-size: 1.15rem; font-weight: 800;">AMBER XAI CONTRADICTION — MODEL AMBIGUITY</h3>
+                    <p style="color: #fef08a; margin: 4px 0 0 0; font-size: 0.95rem;">{alert_desc}</p>
+                </div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
     
     # RADIAL THREAT SCORE METER (Center Circle)
     center_col1, center_col2, center_col3 = st.columns([1, 2, 1])
@@ -683,8 +782,67 @@ with tab1:
         else:
             st.info("Clean factor breakdown.")
 
+    # SHAP Waterfall Chart Sub-Section
+    st.markdown("---")
+    st.markdown("#### 🔬 Explainable AI (XAI) — SHAP Model Attributions")
+    st.caption("Local feature attributions calculated using SHAP (Shapley Additive exPlanations) for tokens shifting the Logistic Regression prediction.")
+
+    w_data = xai_explanation.get("waterfall_data", {})
+    if w_data and w_data.get("labels"):
+        labels = w_data["labels"]
+        vals = w_data["values"]
+        base_v = w_data.get("base_value", 0.0)
+
+        wf_measures = ["relative"] * len(labels) + ["total"]
+        wf_x = labels + ["Total Model Impact"]
+        wf_y = vals + [sum(vals)]
+
+        fig = go.Figure(go.Waterfall(
+            name="SHAP Attributions",
+            orientation="v",
+            measure=wf_measures,
+            x=wf_x,
+            y=wf_y,
+            base=base_v,
+            decreasing={"marker": {"color": "#3ddc97"}},
+            increasing={"marker": {"color": "#ef4444"}},
+            totals={"marker": {"color": "#38bdf8"}},
+            connector={"line": {"color": "#64748b", "width": 1.5, "dash": "dot"}},
+            text=[f"{v:+.3f}" for v in vals] + [f"{w_data.get('final_value', 0.0):.3f}"],
+            textposition="outside"
+        ))
+
+        fig.update_layout(
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(15, 23, 42, 0.6)",
+            font=dict(color="#94a3b8", family="Inter"),
+            xaxis=dict(title="Influential Tokens / N-Grams", gridcolor="#334155"),
+            yaxis=dict(title="Attribution Weight (Log-Odds)", gridcolor="#334155"),
+            height=360,
+            margin=dict(l=20, r=20, t=30, b=30)
+        )
+        st.plotly_chart(fig, use_container_width=True)
+
+        xai_c1, xai_c2 = st.columns(2)
+        with xai_c1:
+            st.markdown("##### 🚨 Top Phishing Signals (Positive Impact)")
+            pos_f = xai_explanation.get("top_positive_features", [])
+            if pos_f:
+                st.dataframe(pd.DataFrame(pos_f).rename(columns={"feature": "Token Feature", "attribution": "SHAP Weight"}), use_container_width=True, hide_index=True)
+            else:
+                st.caption("No significant phishing tokens detected.")
+
+        with xai_c2:
+            st.markdown("##### 🛡️ Top Legitimate Signals (Negative Impact)")
+            neg_f = xai_explanation.get("top_negative_features", [])
+            if neg_f:
+                st.dataframe(pd.DataFrame(neg_f).rename(columns={"feature": "Token Feature", "attribution": "SHAP Weight"}), use_container_width=True, hide_index=True)
+            else:
+                st.caption("No significant legitimate tokens detected.")
+
     st.markdown("</div>", unsafe_allow_html=True)
     render_legal_disclaimer()
+
 
 
 # ==========================================
