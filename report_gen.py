@@ -83,6 +83,38 @@ def generate_pdf_report(
     elements.append(Paragraph("<b>EML Forensics & Threat Analysis Report</b>", title_style))
     now_str = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
     elements.append(Paragraph(f"Generated: {now_str} | Target File SHA-256: <code>{sha256_hash[:16]}...</code>", sub_title_style))
+        # ---- Executive Summary ----
+    elements.append(Spacer(1, 12))
+    elements.append(Paragraph("<b>Executive Summary</b>", h2_style))
+
+    verdict_word = "potentially malicious" if risk_score >= 65 else ("suspicious" if risk_score >= 35 else "likely benign")
+    exec_summary = (
+        f"This report presents a forensic analysis of the submitted email file. "
+        f"The email was assessed as <b>{verdict_word}</b> with a threat score of "
+        f"<b>{risk_score}/100</b> ({risk_level}). "
+    )
+
+    if urls:
+        exec_summary += f"A total of <b>{len(urls)}</b> URL(s) and "
+    else:
+        exec_summary += "No URLs and "
+
+    if ips:
+        exec_summary += f"<b>{len(ips)}</b> IP address(es) were extracted for review. "
+    else:
+        exec_summary += "no IP addresses were extracted. "
+
+    if risk_factors:
+        exec_summary += "The primary risk contributors are listed in the Threat Factor Breakdown below. "
+
+    exec_summary += (
+        f"All findings are timestamped and cryptographically anchored "
+        f"(Merkle root: <code>{merkle_root[:16]}...</code>) for verification."
+    )
+
+    elements.append(Paragraph(exec_summary, body_style))
+    elements.append(Spacer(1, 10))
+    # ---- End Executive Summary ----
 
     # Executive Summary Card Table
     if risk_score >= 65:
