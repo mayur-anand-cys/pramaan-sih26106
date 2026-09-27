@@ -140,6 +140,18 @@ def generate_pdf_report(
         [
             Paragraph("<b>Merkle Root Hash:</b>", body_style),
             Paragraph(f"<code>{merkle_root}</code>", body_style)
+        ],
+                [
+            Paragraph("<b>Case ID:</b>", body_style),
+            Paragraph(f"<b>PRAMAAN-{now_str[:10].replace('-', '')}-001</b>", body_style)
+        ],
+        [
+            Paragraph("<b>Analyst:</b>", body_style),
+            Paragraph("<b>Sneha Namrath</b>", body_style)
+        ],
+        [
+            Paragraph("<b>Report Generated:</b>", body_style),
+            Paragraph(f"{now_str}", body_style)
         ]
     ]
 
