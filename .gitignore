@@ -27,3 +27,14 @@ credentials.json
 # OS
 .DS_Store
 Thumbs.db
+
+# Generated reports
+reports/
+# Test artifacts
+test*.pdf
+test*.md
+test*.html
+test*.json
+# Local backups
+*.bak
+*.saved
