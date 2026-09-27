@@ -6,11 +6,33 @@ from reportlab.platypus import (
     SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, KeepTogether
 )
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.pdfgen import canvas
 try:
     from blockchain.anchor import anchor_evidence
 except ImportError:
     anchor_evidence = None
+class NumberedCanvas(canvas.Canvas):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._saved_page_states = []
 
+    def showPage(self):
+        self._saved_page_states.append(dict(self.__dict__))
+        self._startPage()
+
+    def save(self):
+        num_pages = len(self._saved_page_states)
+        for state in self._saved_page_states:
+            self.__dict__.update(state)
+            self.draw_page_number(num_pages)
+            super().showPage()
+        super().save()
+
+    def draw_page_number(self, page_count):
+        self.setFont("Helvetica", 8)
+        self.setFillColorRGB(0.4, 0.4, 0.4)
+        self.drawRightString(576, 20, f"Page {self._pageNumber} of {page_count}")
+        self.drawString(36, 20, "PRAMAAN Forensic Report — Confidential")
 
 def generate_pdf_report(
     sha256_hash: str,
@@ -439,7 +461,7 @@ def generate_pdf_report(
     ]))
     elements.append(KeepTogether([disclaimer_table]))
 
-    doc.build(elements)
+    doc.build(elements, canvasmaker=NumberedCanvas)
     pdf_bytes = buffer.getvalue()
     buffer.close()
     return pdf_bytes
