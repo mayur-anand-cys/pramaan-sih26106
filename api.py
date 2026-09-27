@@ -7,6 +7,11 @@ from fastapi import FastAPI, File, UploadFile, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Dict, List, Any, Optional
+from fastapi.responses import Response
+from report_gen import generate_pdf_report
+from report_markdown import generate_markdown_report
+from report_html import generate_html_report
+from report_stix import generate_stix_bundle
 
 from model import predict_phishing_probability
 import zkfv
@@ -14,6 +19,8 @@ import threat_intel
 import graph_engine
 import neo4j_engine
 
+# In-memory store for analyzed cases (keyed by case_id like PRAMAAN-XXXXXXXX)
+CASES = {} 
 app = FastAPI(
     title="PRAMAAN Threat Intelligence & Digital Forensics API",
     description="High-Performance SOC Backend API for Phishing Analysis, Threat Graph Correlation, and ZKFV Evidence Proofs",
@@ -120,12 +127,14 @@ async def analyze_eml_file(file: UploadFile = File(...)):
         risk_score=risk_score
     )
 
-    # 10. ZKFV Evidence Proof Generation
+        # 10. ZKFV Evidence Proof Generation
     zkfv_proof = zkfv.generate_evidence_proof(raw_bytes)
 
     risk_level = "HIGH RISK" if risk_score >= 65 else ("MODERATE RISK" if risk_score >= 35 else "LOW RISK")
 
-    return {
+    case_id = "PRAMAAN-" + sha256_hash[:8].upper()
+
+    result = {
         "file_name": file.filename,
         "sha256": sha256_hash,
         "risk_score": risk_score,
@@ -151,9 +160,12 @@ async def analyze_eml_file(file: UploadFile = File(...)):
             "edges": graph_data["edges"]
         },
         "neo4j_ingestion": neo4j_res,
-        "zkfv_proof": zkfv_proof
+               "zkfv_proof": zkfv_proof
     }
 
+    result["case_id"] = case_id
+    CASES[case_id] = result
+    return result
 @app.post("/api/v1/verify-zkfv")
 async def verify_zkfv_proof(file: UploadFile = File(...), proof_json: str = Query(...)):
     """Verify cryptographic evidence proof against uploaded EML bytes."""
@@ -295,5 +307,94 @@ def calculate_risk_score(msg, body, urls, ips, auth_info, domain_alignment, ml_p
     final_score = min(100, max(0, score))
     return final_score, factors
 
+def _case_to_report_kwargs(case):
+    """Map a stored case dict to the kwargs our report generators expect."""
+    urls_flat = []
+    for u in case.get("extracted_urls", []):
+        if isinstance(u, dict):
+            urls_flat.append(u.get("url", ""))
+        else:
+            urls_flat.append(str(u))
+
+    ips_flat = []
+    for g in case.get("extracted_ips", []):
+        if isinstance(g, dict) and g.get("ip"):
+            ips_flat.append(g["ip"])
+
+    zkfv_proof = case.get("zkfv_proof", {}) or {}
+    merkle_root = zkfv_proof.get("merkle_root", "0" * 64) if isinstance(zkfv_proof, dict) else "0" * 64
+
+    return dict(
+        sha256_hash=case.get("sha256", "0" * 64),
+        risk_score=case.get("risk_score", 0),
+        risk_level=case.get("risk_level", "LOW RISK"),
+        headers_dict=case.get("headers", {}),
+        urls=urls_flat,
+        ips=ips_flat,
+        geo_data=case.get("extracted_ips", []),
+        risk_factors=case.get("risk_factors", []),
+        ml_prob=case.get("ml_phishing_probability", 0.0),
+        merkle_root=merkle_root,
+        case_metadata={
+            "Case ID": case.get("case_id", "unknown"),
+            "File Name": case.get("file_name", "unknown"),
+            "SHA-256": case.get("sha256", ""),
+        },
+        auth_results=case.get("authentication", {}),
+        classification="",
+    )
+
+
+@app.get("/api/v1/reports/{case_id}/pdf")
+def download_case_pdf(case_id: str):
+    """Download the forensic PDF report for a previously analyzed case."""
+    case = CASES.get(case_id)
+    if not case:
+        raise HTTPException(status_code=404, detail="Case not found: " + case_id)
+    pdf_bytes = generate_pdf_report(**_case_to_report_kwargs(case))
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": 'attachment; filename="' + case_id + '.pdf"'},
+    )
+
+
+@app.get("/api/v1/reports/{case_id}/md")
+def download_case_md(case_id: str):
+    case = CASES.get(case_id)
+    if not case:
+        raise HTTPException(status_code=404, detail="Case not found: " + case_id)
+    md = generate_markdown_report(**_case_to_report_kwargs(case))
+    return Response(
+        content=md.encode("utf-8"),
+        media_type="text/markdown",
+        headers={"Content-Disposition": 'attachment; filename="' + case_id + '.md"'},
+    )
+
+
+@app.get("/api/v1/reports/{case_id}/html")
+def download_case_html(case_id: str):
+    case = CASES.get(case_id)
+    if not case:
+        raise HTTPException(status_code=404, detail="Case not found: " + case_id)
+    doc = generate_html_report(**_case_to_report_kwargs(case))
+    return Response(
+        content=doc.encode("utf-8"),
+        media_type="text/html",
+        headers={"Content-Disposition": 'attachment; filename="' + case_id + '.html"'},
+    )
+
+
+@app.get("/api/v1/reports/{case_id}/stix")
+def download_case_stix(case_id: str):
+    case = CASES.get(case_id)
+    if not case:
+        raise HTTPException(status_code=404, detail="Case not found: " + case_id)
+    doc = generate_stix_bundle(**_case_to_report_kwargs(case))
+    return Response(
+        content=doc.encode("utf-8"),
+        media_type="application/stix+json",
+        headers={"Content-Disposition": 'attachment; filename="' + case_id + '.stix.json"'},
+    )
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
