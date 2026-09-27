@@ -47,11 +47,31 @@ class TestAuthCheck(unittest.TestCase):
         """SPF on synthetic email with no SPF header -> header='none'."""
         mock_check2.return_value = ("none", "no SPF record")
         raw = "Return-Path: <sender@example.com>\r\n" + self.base_email
-        result = auth_check.check_spf(raw)
+        result = auth_check.check_spf(raw, source_ip="192.0.2.1")
         self.assertEqual(result["header_result"], "none")
         # DNS call still ran (mocked), so dns_verified=True even for 'none'
         self.assertTrue(result["dns_verified"])
         self.assertEqual(result["dns_result"], "none")
+
+    @patch(SPF_PATCH)
+    def test_spf_no_source_ip_skips_dns(self, mock_check2):
+        """SPF skips DNS check and returns dns_verified=False when source_ip is None."""
+        raw = "Return-Path: <sender@example.com>\r\n" + self.base_email
+        result = auth_check.check_spf(raw, source_ip=None)
+        self.assertFalse(result["dns_verified"])
+        self.assertEqual(result["dns_result"], "none")
+        self.assertEqual(result["details"], "No source IP provided; SPF skipped")
+        mock_check2.assert_not_called()
+
+    @patch(SPF_PATCH)
+    def test_spf_check2_unpack_three_tuple(self, mock_check2):
+        """SPF correctly unpacks check2 results when 3 values are returned."""
+        mock_check2.return_value = ("pass", 250, "sender IP matches SPF record")
+        raw = "Return-Path: <sender@example.com>\r\n" + self.base_email
+        result = auth_check.check_spf(raw, source_ip="192.0.2.1")
+        self.assertTrue(result["dns_verified"])
+        self.assertEqual(result["dns_result"], "pass")
+        self.assertEqual(result["details"], "sender IP matches SPF record")
 
     # ------------------------------------------------------------------ DKIM
     @patch(DKIM_VERIFY_PATCH)
@@ -89,9 +109,62 @@ class TestAuthCheck(unittest.TestCase):
         self.assertFalse(result["dkim_alignment"])
         self.assertIn("DMARC policy reject", result["details"])
 
+    @patch(DNS_RESOLVE_PATCH)
+    def test_dmarc_multiple_txt_records_picks_dmarc1(self, mock_resolve):
+        """DMARC lookup searches through multiple TXT records and picks the v=DMARC1 record."""
+        spf_txt = MagicMock()
+        spf_txt.strings = [b"v=spf1 include:_spf.google.com ~all"]
+        dmarc_txt = MagicMock()
+        dmarc_txt.strings = [b"v=DMARC1; p=quarantine; pct=100"]
+        mock_resolve.return_value = [spf_txt, dmarc_txt]
+
+        spf_res = {"domain": "example.com", "dns_result": "pass"}
+        dkim_res = {"domain": "example.com", "dns_result": "pass"}
+        raw = (
+            "From: Alice <alice@example.com>\r\n"
+            "Return-Path: <sender@example.com>\r\n"
+            + self.base_email
+        )
+        result = auth_check.check_dmarc(raw, spf_res, dkim_res)
+        self.assertTrue(result["dns_verified"])
+        self.assertEqual(result["policy"], "quarantine")
+        self.assertTrue(result["spf_alignment"])
+        self.assertTrue(result["dkim_alignment"])
+
+    @patch(DNS_RESOLVE_PATCH)
+    def test_dmarc_no_dmarc_record_returns_none(self, mock_resolve):
+        """DMARC lookup returns None when no record starts with v=DMARC1."""
+        other_txt = MagicMock()
+        other_txt.strings = [b"some random txt record"]
+        mock_resolve.return_value = [other_txt]
+
+        spf_res = {"domain": "example.com", "dns_result": "pass"}
+        dkim_res = {"domain": "example.com", "dns_result": "pass"}
+        raw = (
+            "From: Alice <alice@example.com>\r\n"
+            "Return-Path: <sender@example.com>\r\n"
+            + self.base_email
+        )
+        result = auth_check.check_dmarc(raw, spf_res, dkim_res)
+        self.assertFalse(result["dns_verified"])
+        self.assertEqual(result["policy"], "none")
+        self.assertEqual(result["details"], "DMARC record not found")
+
+    # ------------------------------------------------------------------ ARC
+    def test_check_arc_unsupported_when_missing_arc_verify(self):
+        """check_arc returns unsupported fallback if dkim lacks arc_verify."""
+        with patch.object(auth_check.dkim, "arc_verify", create=True):
+            delattr(auth_check.dkim, "arc_verify")
+            result = auth_check.check_arc(self.base_email)
+            self.assertEqual(result["dns_result"], "unsupported")
+            self.assertFalse(result["seal_verified"])
+            self.assertEqual(
+                result["details"], "ARC verification not supported by dkimpy version"
+            )
+
     # ------------------------------------------------------------------ Trust score
     def test_compute_header_trust_score_max(self):
-        """compute_header_trust_score returns 0-100 for all-pass input."""
+        """compute_header_trust_score returns 100 for all-pass input."""
         spf = {"dns_result": "pass"}
         dkim = {"dns_result": "pass"}
         dmarc = {
@@ -102,8 +175,8 @@ class TestAuthCheck(unittest.TestCase):
         }
         arc = {"seal_verified": True}
         score = auth_check.compute_header_trust_score(spf, dkim, dmarc, arc)
-        # 20(spf)+20(dkim)+20(dmarc)+5(spf_align)+5(dkim_align)+5(policy=reject)+15(arc) = 90
-        self.assertEqual(score, 90)
+        # 25(spf)+25(dkim)+20(dmarc)+5(spf_align)+5(dkim_align)+5(policy=reject)+15(arc) = 100
+        self.assertEqual(score, 100)
         self.assertGreaterEqual(score, 0)
         self.assertLessEqual(score, 100)
 
@@ -164,9 +237,8 @@ class TestAuthCheck(unittest.TestCase):
         self.assertEqual(result["dmarc"]["policy"], "reject")
         self.assertTrue(result["arc"]["seal_verified"])
 
-        # Score in valid range; with SPF+DKIM pass and DMARC(reject)+ARC = 90
-        self.assertGreaterEqual(result["header_trust_score"], 0)
-        self.assertLessEqual(result["header_trust_score"], 100)
+        # Score in valid range; with SPF+DKIM pass and DMARC(reject)+ARC = 100
+        self.assertEqual(result["header_trust_score"], 100)
 
     # ------------------------------------------------------------------ Malformed email
     @patch(SPF_PATCH)

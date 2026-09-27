@@ -92,11 +92,23 @@ def check_spf(raw_email: str, source_ip: Optional[str] = None) -> Dict[str, Any]
     if not domain:
         result["details"] = "No domain found for SPF verification"
         return result
-    # Perform live SPF check
+    # BUG 2 fix: skip DNS check entirely when no source IP is available.
+    # Passing a fake 0.0.0.0 IP produces meaningless results.
+    if not source_ip:
+        result["details"] = "No source IP provided; SPF skipped"
+        return result
+    # h= is the HELO/EHLO hostname; use domain as a best-effort placeholder.
     try:
-        spf_result, explanation = pyspf.check2(i=source_ip or "0.0.0.0", s=mail_from or "", h=domain)
+        raw_result = pyspf.check2(i=source_ip, s=mail_from or "", h=domain)
+        # pyspf.check2 returns (result_str, explanation_str) or (result_str, code, explanation_str)
+        if isinstance(raw_result, (tuple, list)) and len(raw_result) >= 1:
+            spf_result_str = str(raw_result[0]).lower()
+            explanation = str(raw_result[-1]) if len(raw_result) > 1 else ""
+        else:
+            spf_result_str = str(raw_result).lower()
+            explanation = ""
         result["dns_verified"] = True
-        result["dns_result"] = spf_result.lower()
+        result["dns_result"] = spf_result_str
         result["details"] = explanation
     except Exception as exc:
         logger.error("SPF lookup failed: %s", exc)
@@ -162,14 +174,27 @@ def _query_dmarc(domain: str) -> Optional[Dict[str, str]]:
     dmarc_name = f"_dmarc.{domain}"
     try:
         answer = dns.resolver.resolve(dmarc_name, "TXT", lifetime=5)
-        txt = b"".join(answer[0].strings).decode()
+        # BUG 3 fix: iterate all records, pick the one starting with "v=DMARC1"
+        txt = None
+        for rdata in answer:
+            candidate = b"".join(rdata.strings).decode()
+            if candidate.strip().lower().startswith("v=dmarc1"):
+                txt = candidate
+                break
+        if txt is None:
+            logger.warning("No DMARC1 record found for %s", domain)
+            return None
         # Split on ';' and strip whitespace
-        tags = {kv.split("=")[0].strip(): kv.split("=")[1].strip() for kv in txt.split(";") if "=" in kv}
+        tags = {
+            kv.split("=")[0].strip(): kv.split("=", 1)[1].strip()
+            for kv in txt.split(";")
+            if "=" in kv
+        }
         return tags
     except (dns.resolver.NXDOMAIN, dns.resolver.NoAnswer, dns.exception.Timeout) as exc:
         logger.warning("DMARC lookup failed for %s: %s", domain, exc)
         return None
-    except Exception as exc:  # pragma: no cover – unexpected errors
+    except Exception as exc:
         logger.error("DMARC query error: %s", exc)
         return None
 
@@ -244,6 +269,14 @@ def check_arc(raw_email: str) -> Dict[str, Any]:
             if "arc=" in part.lower():
                 header_result = part.split("=")[-1].strip().lower()
                 break
+    # BUG 4 fix: Guard when dkimpy does not have arc_verify
+    if not hasattr(dkim, "arc_verify"):
+        return {
+            "header_result": header_result,
+            "seal_verified": False,
+            "dns_result": "unsupported",
+            "details": "ARC verification not supported by dkimpy version",
+        }
     # dkim.arc_verify expects the raw message bytes
     try:
         verified = dkim.arc_verify(raw_email.encode())
@@ -272,14 +305,21 @@ def compute_header_trust_score(
 ) -> int:
     """Combine individual check results into a 0‑100 trust score.
 
-    Simple heuristic (customisable): each PASS adds 25 points. Alignment and
-    policy compliance provide additional bonuses.
+    Weights:
+    - SPF pass: 25
+    - DKIM pass: 25
+    - DMARC pass: 20
+    - DMARC spf_alignment bonus: 5
+    - DMARC dkim_alignment bonus: 5
+    - DMARC policy=reject bonus: 5
+    - ARC seal_verified: 15
+    Total: 25 + 25 + 20 + 5 + 5 + 5 + 15 = 100
     """
     score = 0
     if spf.get("dns_result") == "pass":
-        score += 20
+        score += 25
     if dkim.get("dns_result") == "pass":
-        score += 20
+        score += 25
     if dmarc.get("dns_result") == "pass":
         score += 20
         if dmarc.get("spf_alignment"):
