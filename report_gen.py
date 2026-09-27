@@ -25,6 +25,7 @@ def generate_pdf_report(
     merkle_root: str,
     case_id: str = "PRAMAAN-AUTO",
     analyst: str = "Sneha Namrath",
+    relay_hops: list = None,
     filename: str = "forensic_report.pdf"
 ) -> bytes:
     """Generate a comprehensive forensic PDF report using reportlab."""
@@ -294,6 +295,36 @@ def generate_pdf_report(
 
     elements.append(custody_table)
     elements.append(Spacer(1, 12))
+
+        # Relay Hop Timeline
+    if relay_hops:
+        elements.append(Paragraph("<b>Relay Hop Timeline</b>", h2_style))
+        elements.append(Spacer(1, 6))
+
+        hop_data = [["Hop #", "From Host", "By Host", "IP Address", "Trust Level"]]
+        for h in relay_hops:
+            hop_data.append([
+                str(h.get("Hop #", "")),
+                str(h.get("From Host", ""))[:25],
+                str(h.get("By Host", ""))[:25],
+                str(h.get("IP Address", "")),
+                str(h.get("Trust Level", "")),
+            ])
+
+        hop_table = Table(hop_data, colWidths=[40, 110, 110, 100, 180])
+        hop_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1E293B')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, -1), 9),
+            ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor('#F8FAFC')),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#CBD5E1')),
+            ('PADDING', (0, 0), (-1, -1), 5),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ]))
+
+        elements.append(hop_table)
+        elements.append(Spacer(1, 12))
 
         # Contradiction Alerts
     contradictions = []
