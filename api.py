@@ -138,7 +138,7 @@ async def analyze_eml_file(file: UploadFile = File(...)):
 
     # 7. Risk Score & Factor Calculation
     risk_score, risk_factors = calculate_risk_score(
-        msg, body_text, urls, ips, auth_info, domain_alignment, ml_prob
+        msg, body_text, analyzed_urls, ips, auth_info, domain_alignment, ml_prob
     )
 
     # 7b. Add typosquat bonus to risk score
@@ -151,7 +151,6 @@ async def analyze_eml_file(file: UploadFile = File(...)):
         })
 
     # 7c. XAI Contradiction Detection & SHAP Explanation
-# 7b. XAI Contradiction Detection & SHAP Explanation
     ml_result = {
         "probability": ml_prob,
         "prediction": "phishing" if ml_prob >= 0.5 else "legitimate",
