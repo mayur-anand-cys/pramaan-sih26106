@@ -1202,7 +1202,12 @@ elif selected_tab == "Relay & Route":
                 ip_match = re.search(r'\[([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3})\]', str(rh))
 
                 hop_ip = ip_match.group(1) if ip_match else "N/A"
-                trust_level = "TRUSTED / INTERNAL" if (idx == 1 or "google.com" in str(rh).lower()) else "UNTRUSTED / PUBLIC"
+                from_host = from_match.group(1).strip("[]()<>.,;").lower() if from_match else ""
+                parsed_from_host = urlparse(from_host).hostname if "://" in from_host else from_host
+                is_google_host = bool(parsed_from_host) and (
+                    parsed_from_host == "google.com" or parsed_from_host.endswith(".google.com")
+                )
+                trust_level = "TRUSTED / INTERNAL" if (idx == 1 or is_google_host) else "UNTRUSTED / PUBLIC"
 
                 hop_rows.append({
                     "Hop #": idx, "From Host": from_match.group(1) if from_match else "Unknown",
