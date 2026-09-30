@@ -33,3 +33,4 @@ Thumbs.db
 # Local installers
 Docker Desktop Installer.exe
 *.exe
+backend/auth/users.db

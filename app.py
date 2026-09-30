@@ -37,6 +37,16 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# --- Authentication gate ---
+from backend.auth.login_ui import render_login_page
+from backend.auth.authenticator import get_current_user, logout as auth_logout
+
+if not render_login_page():
+    st.stop()
+
+_user = get_current_user()
+_role = _user["role"] if _user else "analyst"
+
 # Helper for defanging URLs
 def defang_url(url: str) -> str:
     s = url.replace("http://", "hxxp://").replace("https://", "hxxps://")
@@ -359,6 +369,13 @@ with st.sidebar:
     use_sample = st.checkbox("🧪 Use Sample Phishing EML", value=False)
     uploaded_file = st.file_uploader("Upload .eml File", type=["eml"])
 
+    st.markdown("---")
+    if _user:
+        st.caption(f"Signed in as **{_user.get('username', 'unknown')}** ({_role})")
+    if st.button("Sign out", use_container_width=True):
+        auth_logout()
+        st.rerun()
+
 # Dynamic CSS Theme Ingestion based on Selection
 if st.session_state.theme == "Example A (Dark Blue)":
     bg_gradient = "linear-gradient(135deg, #0f1419 0%, #1a2332 100%)"
@@ -603,6 +620,17 @@ headers_dict = {
     "Return-Path": str(msg.get("Return-Path", "N/A")),
     "Message-ID": str(msg.get("Message-ID", "N/A"))
 }
+
+# --- Role-based routing ---
+if _role == "citizen":
+    from pramaan.citizen_view import render_citizen_portal
+    render_citizen_portal(
+        risk_score=risk_score,
+        risk_level=risk_level,
+        risk_factors=risk_factors,
+        ml_prob=ml_prob,
+    )
+    st.stop()
 
 pdf_bytes = generate_pdf_report(
     sha256_hash=sha256_hash,
