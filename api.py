@@ -15,6 +15,9 @@ import threat_intel
 import graph_engine
 import neo4j_engine
 from backend.detection.auth_check import verify_email_auth
+
+# Thread hijacking detection (Issue #22)
+from backend.detection.thread_hijack import detect_thread_hijacking
 from backend.detection.xai import (
     detect_contradictions,
     explain_prediction,
@@ -84,6 +87,10 @@ async def analyze_eml_file(file: UploadFile = File(...)):
     msg = email.message_from_bytes(raw_bytes, policy=policy.default)
     sha256_hash = hashlib.sha256(raw_bytes).hexdigest()
 
+    # Thread hijacking detection (Issue #22)
+    thread_hijack_result = detect_thread_hijacking(msg)
+    thread_hijack_modifier = thread_hijack_result.get("risk_modifier", 0)
+
     subject_text = str(msg.get("Subject", ""))
     from_header = str(msg.get("From", ""))
     to_header = str(msg.get("To", ""))
@@ -141,6 +148,21 @@ async def analyze_eml_file(file: UploadFile = File(...)):
         msg, body_text, analyzed_urls, ips, auth_info, domain_alignment, ml_prob
     )
 
+
+    # 7b. Thread hijacking risk modifier (Issue #22)
+    if thread_hijack_modifier > 0:
+        risk_score = min(100, risk_score + thread_hijack_modifier)
+        risk_factors.append({
+            "factor": "thread_hijacking",
+            "points": thread_hijack_modifier,
+            "detail": (
+                f"Detected {len(thread_hijack_result['anomalies'])} "
+                f"thread hijacking anomalies"
+            ),
+        })
+
+    # 7b. XAI Contradiction Detection & SHAP Explanation
+
     # 7b. Add typosquat bonus to risk score
     if typosquat_bonus > 0 and typosquat_result is not None:
         risk_score = min(100, risk_score + typosquat_bonus)
@@ -151,6 +173,7 @@ async def analyze_eml_file(file: UploadFile = File(...)):
         })
 
     # 7c. XAI Contradiction Detection & SHAP Explanation
+
     ml_result = {
         "probability": ml_prob,
         "prediction": "phishing" if ml_prob >= 0.5 else "legitimate",
@@ -217,7 +240,8 @@ async def analyze_eml_file(file: UploadFile = File(...)):
             "edges": graph_data["edges"]
         },
         "neo4j_ingestion": neo4j_res,
-        "zkfv_proof": zkfv_proof
+        "zkfv_proof": zkfv_proof,
+        "thread_hijacking": thread_hijack_result
     }
 
 
