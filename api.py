@@ -14,6 +14,10 @@ import zkfv
 import threat_intel
 import graph_engine
 import neo4j_engine
+
+# Threat Intel Aggregator (Issue #9)
+from backend.intel.aggregator import enrich, get_cache_stats
+from backend.intel.models import detect_indicator_type
 from backend.detection.auth_check import verify_email_auth
 
 # Thread hijacking detection (Issue #22)
@@ -443,3 +447,24 @@ def calculate_risk_score(msg, body, urls, ips, auth_info, domain_alignment, ml_p
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
+
+# ═══════════════════════════════════════════════════════════════
+# Threat Intel Aggregator (Issue #9)
+# ═══════════════════════════════════════════════════════════════
+
+@app.get("/api/v1/intel/enrich")
+async def enrich_indicator(indicator: str = Query(..., description="IP, domain, or URL to enrich")):
+    """
+    Enrich an indicator using all 9 threat intel providers in parallel.
+    Returns verdict, threat_score, tags, and per-provider status.
+    """
+    indicator_type = detect_indicator_type(indicator)
+    result = await enrich(indicator, indicator_type=indicator_type)
+    return result.to_dict()
+
+
+@app.get("/api/v1/intel/cache/stats")
+def intel_cache_stats():
+    """Return cache performance stats."""
+    return get_cache_stats()
