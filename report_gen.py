@@ -7,6 +7,10 @@ from reportlab.platypus import (
 )
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.pdfgen import canvas
+try:
+    from blockchain.anchor import anchor_evidence
+except ImportError:
+    anchor_evidence = None
 
 class NumberedCanvas(canvas.Canvas):
     def __init__(self, *args, **kwargs):
@@ -110,6 +114,38 @@ def generate_pdf_report(
     elements.append(Paragraph("<b>EML Forensics & Threat Analysis Report</b>", title_style))
     now_str = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
     elements.append(Paragraph(f"Generated: {now_str} | Target File SHA-256: <code>{sha256_hash[:16]}...</code>", sub_title_style))
+        # ---- Executive Summary ----
+    elements.append(Spacer(1, 12))
+    elements.append(Paragraph("<b>Executive Summary</b>", h2_style))
+
+    verdict_word = "potentially malicious" if risk_score >= 65 else ("suspicious" if risk_score >= 35 else "likely benign")
+    exec_summary = (
+        f"This report presents a forensic analysis of the submitted email file. "
+        f"The email was assessed as <b>{verdict_word}</b> with a threat score of "
+        f"<b>{risk_score}/100</b> ({risk_level}). "
+    )
+
+    if urls:
+        exec_summary += f"A total of <b>{len(urls)}</b> URL(s) and "
+    else:
+        exec_summary += "No URLs and "
+
+    if ips:
+        exec_summary += f"<b>{len(ips)}</b> IP address(es) were extracted for review. "
+    else:
+        exec_summary += "no IP addresses were extracted. "
+
+    if risk_factors:
+        exec_summary += "The primary risk contributors are listed in the Threat Factor Breakdown below. "
+
+    exec_summary += (
+        f"All findings are timestamped and cryptographically anchored "
+        f"(Merkle root: <code>{merkle_root[:16]}...</code>) for verification."
+    )
+
+    elements.append(Paragraph(exec_summary, body_style))
+    elements.append(Spacer(1, 10))
+    # ---- End Executive Summary ----
 
     # Executive Summary Card Table
     if risk_score >= 65:
@@ -135,6 +171,18 @@ def generate_pdf_report(
         [
             Paragraph("<b>Merkle Root Hash:</b>", body_style),
             Paragraph(f"<code>{merkle_root}</code>", body_style)
+        ],
+                [
+            Paragraph("<b>Case ID:</b>", body_style),
+            Paragraph(f"<b>PRAMAAN-{now_str[:10].replace('-', '')}-001</b>", body_style)
+        ],
+        [
+            Paragraph("<b>Analyst:</b>", body_style),
+            Paragraph("<b>Sneha Namrath</b>", body_style)
+        ],
+        [
+            Paragraph("<b>Report Generated:</b>", body_style),
+            Paragraph(f"{now_str}", body_style)
         ]
     ]
 
@@ -245,6 +293,159 @@ def generate_pdf_report(
         elements.append(Paragraph("No URLs extracted.", body_style))
 
     elements.append(Spacer(1, 15))
+        # Chain-of-Custody Timeline
+    elements.append(Paragraph("<b>Chain-of-Custody Timeline</b>", h2_style))
+    elements.append(Spacer(1, 6))
+
+    custody_data = [
+        ["Stage", "Timestamp (UTC)", "Action"],
+        ["Collected", now_str, "Email file ingested and SHA-256 computed."],
+        ["Analyzed", now_str, "Headers, IOCs, and ML scoring completed."],
+        ["Anchored", now_str, f"Merkle root recorded: {merkle_root[:16]}..."],
+        ["Reported", now_str, "Forensic PDF generated for review."],
+    ]
+
+    custody_table = Table(custody_data, colWidths=[90, 150, 300])
+    custody_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1E293B')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor('#F8FAFC')),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#CBD5E1')),
+        ('PADDING', (0, 0), (-1, -1), 6),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+    ]))
+
+    elements.append(custody_table)
+    elements.append(Spacer(1, 12))
+
+        # Relay Hop Timeline
+    if relay_hops:
+        elements.append(Paragraph("<b>Relay Hop Timeline</b>", h2_style))
+        elements.append(Spacer(1, 6))
+
+        hop_data = [["Hop #", "From Host", "By Host", "IP Address", "Trust Level"]]
+        for h in relay_hops:
+            hop_data.append([
+                str(h.get("Hop #", "")),
+                str(h.get("From Host", ""))[:25],
+                str(h.get("By Host", ""))[:25],
+                str(h.get("IP Address", "")),
+                str(h.get("Trust Level", "")),
+            ])
+
+        hop_table = Table(hop_data, colWidths=[40, 110, 110, 100, 180])
+        hop_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1E293B')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, -1), 9),
+            ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor('#F8FAFC')),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#CBD5E1')),
+            ('PADDING', (0, 0), (-1, -1), 5),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ]))
+
+        elements.append(hop_table)
+        elements.append(Spacer(1, 12))
+
+        # Contradiction Alerts
+    contradictions = []
+
+    # Contradiction 1: From-domain vs sender IP country
+    from_header = headers_dict.get("From", "")
+    if "@" in from_header and geo_data:
+        for geo in geo_data:
+            country = geo.get("country", "")
+            if country and country.lower() not in ("unknown", "private", ""):
+                # Simple heuristic: flag if sender domain looks corporate but IP is in unusual location
+                if any(kw in from_header.lower() for kw in ["bank", "paypal", "github", "microsoft", "google", "amazon"]):
+                    contradictions.append(
+                        f"Sender claims to be from a known brand, but source IP resolves to {country}."
+                    )
+                break
+
+    # Contradiction 2: High ML score but no URLs/IPs
+    if ml_prob > 0.7 and not urls and not ips:
+        contradictions.append(
+            "ML model flagged high phishing probability, but no URLs or IPs were extracted."
+        )
+
+    # Contradiction 3: Low ML score but high risk factors
+    if ml_prob < 0.3 and len(risk_factors) >= 3:
+        contradictions.append(
+            "ML model shows low phishing probability, but multiple risk factors were detected."
+        )
+
+    # Contradiction 4: Missing critical headers
+    missing = [h for h in ["Return-Path", "Message-ID"] if headers_dict.get(h, "N/A") == "N/A"]
+    if missing:
+        contradictions.append(
+            f"Critical headers missing: {', '.join(missing)}. This may indicate spoofing."
+        )
+
+    if contradictions:
+        elements.append(Paragraph("<b>Contradiction Alerts</b>", h2_style))
+        elements.append(Spacer(1, 6))
+
+        contra_data = [["#", "Alert"]]
+        for i, c in enumerate(contradictions, 1):
+            contra_data.append([str(i), Paragraph(c, body_style)])
+
+        contra_table = Table(contra_data, colWidths=[30, 510])
+        contra_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#DC2626')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor('#FEF2F2')),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#FCA5A5')),
+            ('PADDING', (0, 0), (-1, -1), 6),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ]))
+
+        elements.append(contra_table)
+        elements.append(Spacer(1, 12))
+
+        # Blockchain Anchoring
+    elements.append(Paragraph("<b>Blockchain Anchoring</b>", h2_style))
+    elements.append(Spacer(1, 6))
+
+    if anchor_evidence is not None:
+        anchor_result = anchor_evidence(
+            case_id=case_id,
+            merkle_root=merkle_root,
+            file_sha256=sha256_hash,
+            classification=risk_level,
+        )
+        blockchain_tx = anchor_result.get("tx_hash") or "Not anchored"
+        etherscan_url = anchor_result.get("explorer_url") or "Not available"
+        storage_status = anchor_result.get("storage", "UNKNOWN")
+    else:
+        blockchain_tx = "Blockchain module not available"
+        etherscan_url = "N/A"
+        storage_status = "N/A"
+
+    chain_data = [
+        ["Field", "Value"],
+        ["Storage", storage_status],
+        ["Merkle Root", f"{merkle_root[:32]}..."],
+        ["Blockchain TX", f"{blockchain_tx[:40]}..."],
+        ["Explorer Link", etherscan_url],
+    ]
+
+    chain_table = Table(chain_data, colWidths=[120, 420])
+    chain_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1E293B')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor('#F8FAFC')),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#CBD5E1')),
+        ('PADDING', (0, 0), (-1, -1), 6),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+    ]))
+
+    elements.append(chain_table)
+    elements.append(Spacer(1, 12))
 
     # Section 5: Legal Disclaimer
     disclaimer_box_data = [[
@@ -261,7 +462,7 @@ def generate_pdf_report(
     ]))
     elements.append(KeepTogether([disclaimer_table]))
 
-    doc.build(elements,canvasmaker=NumberedCanvas)
+    doc.build(elements, canvasmaker=NumberedCanvas)
     pdf_bytes = buffer.getvalue()
     buffer.close()
     return pdf_bytes

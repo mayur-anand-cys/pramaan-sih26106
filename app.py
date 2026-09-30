@@ -1,4 +1,5 @@
 import streamlit as st
+import datetime
 import email
 from email import policy
 import re
@@ -632,6 +633,23 @@ if _role == "citizen":
     )
     st.stop()
 
+# Relay Hop Extraction
+hop_rows = []
+received_headers = msg.get_all("Received", [])
+for idx, rh in enumerate(reversed(received_headers), 1):
+    from_match = re.search(r"from\s+([^\s]+)", str(rh), re.IGNORECASE)
+    by_match = re.search(r"by\s+([^\s]+)", str(rh), re.IGNORECASE)
+    ip_match = re.search(r"\[([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3})\]", str(rh))
+    hop_ip = ip_match.group(1) if ip_match else "N/A"
+    trust_level = "TRUSTED / INTERNAL" if (idx == 1 or "google" in str(rh).lower()) else "UNKNOWN"
+    hop_rows.append({
+        "Hop #": idx,
+        "From Host": from_match.group(1) if from_match else "Unknown",
+        "By Host": by_match.group(1) if by_match else "Unknown",
+        "IP Address": hop_ip,
+        "Trust Level": trust_level,
+    })
+
 pdf_bytes = generate_pdf_report(
     sha256_hash=sha256_hash,
     risk_score=risk_score,
@@ -643,6 +661,9 @@ pdf_bytes = generate_pdf_report(
     risk_factors=risk_factors,
     ml_prob=ml_prob,
     merkle_root=merkle_root,
+    case_id=f"PRAMAAN-{datetime.datetime.now().strftime('%Y%m%d-%H%M%S')}",
+    analyst="Sneha Namrath",
+    relay_hops=hop_rows,
 )
 
 # --- TOP MAIN HEADER (Flush with top) ---
@@ -1031,6 +1052,7 @@ with tab4:
 
     # Received Hops Timeline
     received_headers = msg.get_all("Received", [])
+    hop_rows = []
     if received_headers:
         st.markdown("#### Received Hop Chain Timeline")
         hop_rows = []
