@@ -642,7 +642,7 @@ pdf_bytes = generate_pdf_report(
     geo_data=geo_results,
     risk_factors=risk_factors,
     ml_prob=ml_prob,
-    merkle_root=merkle_root
+    merkle_root=merkle_root,
 )
 
 # --- TOP MAIN HEADER (Flush with top) ---
