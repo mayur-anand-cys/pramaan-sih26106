@@ -27,6 +27,7 @@ from backend.detection.xai import (
     log_contradiction_to_audit
 )
 
+from security_hardening import extract_headers_with_forensics
 
 # Page Configuration
 st.set_page_config(
@@ -35,6 +36,16 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
+
+# --- Authentication gate ---
+from backend.auth.login_ui import render_login_page
+from backend.auth.authenticator import get_current_user, logout as auth_logout
+
+if not render_login_page():
+    st.stop()
+
+_user = get_current_user()
+_role = _user["role"] if _user else "analyst"
 
 # Helper for defanging URLs
 def defang_url(url: str) -> str:
@@ -358,6 +369,13 @@ with st.sidebar:
     use_sample = st.checkbox("🧪 Use Sample Phishing EML", value=False)
     uploaded_file = st.file_uploader("Upload .eml File", type=["eml"])
 
+    st.markdown("---")
+    if _user:
+        st.caption(f"Signed in as **{_user.get('username', 'unknown')}** ({_role})")
+    if st.button("Sign out", use_container_width=True):
+        auth_logout()
+        st.rerun()
+
 # Dynamic CSS Theme Ingestion based on Selection
 if st.session_state.theme == "Example A (Dark Blue)":
     bg_gradient = "linear-gradient(135deg, #0f1419 0%, #1a2332 100%)"
@@ -531,6 +549,7 @@ subject_text = str(msg.get("Subject", ""))
 urls = extract_urls(body_text + " " + subject_text)
 ips = extract_ips(body_text + " " + str(msg))
 auth_info = analyze_authentication_headers(msg)
+header_forensics = extract_headers_with_forensics(msg)
 
 # ML Phishing Probability
 full_text_for_ml = f"{subject_text}\n{body_text}"
@@ -538,6 +557,16 @@ ml_prob = predict_phishing_probability(full_text_for_ml)
 
 # Risk Calculation
 risk_score, risk_factors = calculate_risk_score(msg, body_text, urls, ips, auth_info, ml_prob)
+
+# Merge header injection anomalies into risk factors
+for _anomaly in header_forensics.get("header_injection_anomalies", []):
+    risk_factors.append({
+        "category": "Header Injection",
+        "points": _anomaly["risk_modifier"],
+        "description": _anomaly["explanation"],
+    })
+    risk_score = min(100, risk_score + _anomaly["risk_modifier"])
+
 
 # Email Authentication & XAI Contradiction Analysis
 raw_text = raw_bytes.decode('utf-8', errors='replace')
@@ -591,6 +620,17 @@ headers_dict = {
     "Return-Path": str(msg.get("Return-Path", "N/A")),
     "Message-ID": str(msg.get("Message-ID", "N/A"))
 }
+
+# --- Role-based routing ---
+if _role == "citizen":
+    from pramaan.citizen_view import render_citizen_portal
+    render_citizen_portal(
+        risk_score=risk_score,
+        risk_level=risk_level,
+        risk_factors=risk_factors,
+        ml_prob=ml_prob,
+    )
+    st.stop()
 
 pdf_bytes = generate_pdf_report(
     sha256_hash=sha256_hash,
@@ -768,6 +808,16 @@ with tab1:
         else:
             st.success("No critical threat factors detected in this email.")
 
+        # Header Injection Alert Cards (HIGH severity)
+        if header_forensics.get("header_injection_anomalies"):
+            st.markdown("##### 🚨 Header Injection Anomalies")
+            for _a in header_forensics["header_injection_anomalies"]:
+                st.error(
+                    "**HIGH** — Header injection: `" + _a["header"] + "` appears "
+                    + str(_a["count"]) + " times (+" + str(_a["risk_modifier"])
+                    + " risk). " + _a["explanation"]
+                )
+
     with ov_c2:
         st.markdown("#### 📊 Threat Factor Weight Breakdown")
         if risk_factors:
@@ -872,6 +922,18 @@ with tab2:
         st.markdown("**ARC Validation**")
         b_cls = "badge-pass" if auth_info["arc"] == "PASS" else ("badge-fail" if auth_info["arc"] == "FAIL" else "badge-warn")
         st.markdown(f'<span class="{b_cls}">{auth_info["arc"]}</span>', unsafe_allow_html=True)
+
+
+    # Header Injection Alert Cards (Tab 2)
+    if header_forensics.get("header_injection_anomalies"):
+        st.markdown("---")
+        st.markdown("#### 🚨 Header Injection Anomalies")
+        for _a in header_forensics["header_injection_anomalies"]:
+            st.error(
+                "**HIGH** — Header injection: `" + _a["header"] + "` appears "
+                + str(_a["count"]) + " times (+" + str(_a["risk_modifier"])
+                + " risk). " + _a["explanation"]
+            )
 
     st.markdown("---")
     st.markdown("#### 🌐 Domain Alignment Matrix")
