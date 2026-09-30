@@ -27,3 +27,10 @@ credentials.json
 # OS
 .DS_Store
 Thumbs.db
+.env
+.vscode/
+
+# Local installers
+Docker Desktop Installer.exe
+*.exe
+backend/auth/users.db

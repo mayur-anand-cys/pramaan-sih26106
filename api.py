@@ -14,7 +14,14 @@ import zkfv
 import threat_intel
 import graph_engine
 import neo4j_engine
+
+# Threat Intel Aggregator (Issue #9)
+from backend.intel.aggregator import enrich, get_cache_stats
+from backend.intel.models import detect_indicator_type
 from backend.detection.auth_check import verify_email_auth
+
+# Thread hijacking detection (Issue #22)
+from backend.detection.thread_hijack import detect_thread_hijacking
 from backend.detection.xai import (
     detect_contradictions,
     explain_prediction,
@@ -25,6 +32,9 @@ from backend.detection.xai import (
 
 
 logger = logging.getLogger(__name__)
+
+# Typosquat & Homoglyph detection (Issue #7)
+from backend.typosquat.detector import detect_domain, get_risk_score_contribution
 
 app = FastAPI(
     title="PRAMAAN Threat Intelligence & Digital Forensics API",
@@ -81,6 +91,10 @@ async def analyze_eml_file(file: UploadFile = File(...)):
     msg = email.message_from_bytes(raw_bytes, policy=policy.default)
     sha256_hash = hashlib.sha256(raw_bytes).hexdigest()
 
+    # Thread hijacking detection (Issue #22)
+    thread_hijack_result = detect_thread_hijacking(msg)
+    thread_hijack_modifier = thread_hijack_result.get("risk_modifier", 0)
+
     subject_text = str(msg.get("Subject", ""))
     from_header = str(msg.get("From", ""))
     to_header = str(msg.get("To", ""))
@@ -93,6 +107,17 @@ async def analyze_eml_file(file: UploadFile = File(...)):
 
     # 1. Domain Alignment & Headers Analysis
     domain_alignment = threat_intel.analyze_domain_alignment(from_header, return_path, reply_to)
+
+    # 1b. Typosquat & Homoglyph Detection (Issue #7)
+    typosquat_result = None
+    typosquat_bonus = 0
+    _from_domain = domain_alignment.get("from_domain", "") if isinstance(domain_alignment, dict) else ""
+    if _from_domain:
+        try:
+            typosquat_result = detect_domain(_from_domain, check_rdap=True)
+            typosquat_bonus = get_risk_score_contribution(typosquat_result)
+        except Exception as e:
+            print(f"[WARN] Typosquat detection failed: {e}")
 
     # 2. Extract Artifacts
     urls = extract_urls(full_text)
@@ -127,7 +152,32 @@ async def analyze_eml_file(file: UploadFile = File(...)):
         msg, body_text, analyzed_urls, ips, auth_info, domain_alignment, ml_prob
     )
 
+
+    # 7b. Thread hijacking risk modifier (Issue #22)
+    if thread_hijack_modifier > 0:
+        risk_score = min(100, risk_score + thread_hijack_modifier)
+        risk_factors.append({
+            "factor": "thread_hijacking",
+            "points": thread_hijack_modifier,
+            "detail": (
+                f"Detected {len(thread_hijack_result['anomalies'])} "
+                f"thread hijacking anomalies"
+            ),
+        })
+
     # 7b. XAI Contradiction Detection & SHAP Explanation
+
+    # 7b. Add typosquat bonus to risk score
+    if typosquat_bonus > 0 and typosquat_result is not None:
+        risk_score = min(100, risk_score + typosquat_bonus)
+        risk_factors.append({
+            "factor": "typosquat_detection",
+            "points": typosquat_bonus,
+            "detail": f"Lookalike domain detected: {typosquat_result.matched_brand or 'unknown brand'}"
+        })
+
+    # 7c. XAI Contradiction Detection & SHAP Explanation
+
     ml_result = {
         "probability": ml_prob,
         "prediction": "phishing" if ml_prob >= 0.5 else "legitimate",
@@ -194,7 +244,8 @@ async def analyze_eml_file(file: UploadFile = File(...)):
             "edges": graph_data["edges"]
         },
         "neo4j_ingestion": neo4j_res,
-        "zkfv_proof": zkfv_proof
+        "zkfv_proof": zkfv_proof,
+        "thread_hijacking": thread_hijack_result
     }
 
 
@@ -396,3 +447,24 @@ def calculate_risk_score(msg, body, urls, ips, auth_info, domain_alignment, ml_p
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
+
+# ═══════════════════════════════════════════════════════════════
+# Threat Intel Aggregator (Issue #9)
+# ═══════════════════════════════════════════════════════════════
+
+@app.get("/api/v1/intel/enrich")
+async def enrich_indicator(indicator: str = Query(..., description="IP, domain, or URL to enrich")):
+    """
+    Enrich an indicator using all 9 threat intel providers in parallel.
+    Returns verdict, threat_score, tags, and per-provider status.
+    """
+    indicator_type = detect_indicator_type(indicator)
+    result = await enrich(indicator, indicator_type=indicator_type)
+    return result.to_dict()
+
+
+@app.get("/api/v1/intel/cache/stats")
+def intel_cache_stats():
+    """Return cache performance stats."""
+    return get_cache_stats()
