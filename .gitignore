@@ -29,3 +29,7 @@ credentials.json
 Thumbs.db
 .env
 .vscode/
+
+# Local installers
+Docker Desktop Installer.exe
+*.exe
