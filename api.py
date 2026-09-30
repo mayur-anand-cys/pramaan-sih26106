@@ -26,6 +26,9 @@ from backend.detection.xai import (
 
 logger = logging.getLogger(__name__)
 
+# Typosquat & Homoglyph detection (Issue #7)
+from backend.typosquat.detector import detect_domain, get_risk_score_contribution
+
 app = FastAPI(
     title="PRAMAAN Threat Intelligence & Digital Forensics API",
     description="High-Performance SOC Backend API for Phishing Analysis, Threat Graph Correlation, and ZKFV Evidence Proofs",
@@ -94,6 +97,17 @@ async def analyze_eml_file(file: UploadFile = File(...)):
     # 1. Domain Alignment & Headers Analysis
     domain_alignment = threat_intel.analyze_domain_alignment(from_header, return_path, reply_to)
 
+    # 1b. Typosquat & Homoglyph Detection (Issue #7)
+    typosquat_result = None
+    typosquat_bonus = 0
+    _from_domain = domain_alignment.get("from_domain", "") if isinstance(domain_alignment, dict) else ""
+    if _from_domain:
+        try:
+            typosquat_result = detect_domain(_from_domain, check_rdap=True)
+            typosquat_bonus = get_risk_score_contribution(typosquat_result)
+        except Exception as e:
+            print(f"[WARN] Typosquat detection failed: {e}")
+
     # 2. Extract Artifacts
     urls = extract_urls(full_text)
     ips = extract_ips(full_text + " " + str(msg))
@@ -127,7 +141,16 @@ async def analyze_eml_file(file: UploadFile = File(...)):
         msg, body_text, analyzed_urls, ips, auth_info, domain_alignment, ml_prob
     )
 
-    # 7b. XAI Contradiction Detection & SHAP Explanation
+    # 7b. Add typosquat bonus to risk score
+    if typosquat_bonus > 0 and typosquat_result is not None:
+        risk_score = min(100, risk_score + typosquat_bonus)
+        risk_factors.append({
+            "factor": "typosquat_detection",
+            "points": typosquat_bonus,
+            "detail": f"Lookalike domain detected: {typosquat_result.matched_brand or 'unknown brand'}"
+        })
+
+    # 7c. XAI Contradiction Detection & SHAP Explanation
     ml_result = {
         "probability": ml_prob,
         "prediction": "phishing" if ml_prob >= 0.5 else "legitimate",
