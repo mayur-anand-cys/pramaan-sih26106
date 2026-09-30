@@ -373,7 +373,7 @@ with st.sidebar:
     st.markdown("---")
     if _user:
         st.caption(f"Signed in as **{_user.get('username', 'unknown')}** ({_role})")
-    if st.button("Sign out", use_container_width=True):
+    if st.button("Sign out", width='stretch'):
         auth_logout()
         st.rerun()
 
@@ -697,7 +697,7 @@ with top_col2:
             data=pdf_bytes,
             file_name=f"PRAMAAN_Report_{file_name}.pdf",
             mime="application/pdf",
-            use_container_width=True
+            width='stretch'
         )
     with btn_c2:
         st.markdown("""
@@ -849,7 +849,7 @@ with tab1:
                 color=alt.Color('category:N', scale=alt.Scale(scheme='dark2'), legend=None),
                 tooltip=['category', 'points', 'description']
             ).properties(height=200)
-            st.altair_chart(chart, use_container_width=True)
+            st.altair_chart(chart, width='stretch')
         else:
             st.info("Clean factor breakdown.")
 
@@ -892,14 +892,14 @@ with tab1:
             height=360,
             margin=dict(l=20, r=20, t=30, b=30)
         )
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width='stretch')
 
         xai_c1, xai_c2 = st.columns(2)
         with xai_c1:
             st.markdown("##### 🚨 Top Phishing Signals (Positive Impact)")
             pos_f = xai_explanation.get("top_positive_features", [])
             if pos_f:
-                st.dataframe(pd.DataFrame(pos_f).rename(columns={"feature": "Token Feature", "attribution": "SHAP Weight"}), use_container_width=True, hide_index=True)
+                st.dataframe(pd.DataFrame(pos_f).rename(columns={"feature": "Token Feature", "attribution": "SHAP Weight"}), width='stretch', hide_index=True)
             else:
                 st.caption("No significant phishing tokens detected.")
 
@@ -907,7 +907,7 @@ with tab1:
             st.markdown("##### 🛡️ Top Legitimate Signals (Negative Impact)")
             neg_f = xai_explanation.get("top_negative_features", [])
             if neg_f:
-                st.dataframe(pd.DataFrame(neg_f).rename(columns={"feature": "Token Feature", "attribution": "SHAP Weight"}), use_container_width=True, hide_index=True)
+                st.dataframe(pd.DataFrame(neg_f).rename(columns={"feature": "Token Feature", "attribution": "SHAP Weight"}), width='stretch', hide_index=True)
             else:
                 st.caption("No significant legitimate tokens detected.")
 
@@ -970,14 +970,14 @@ with tab2:
         {"Header Path": "Return-Path", "Address": ret_addr, "Extracted Domain": align_data.get("return_domain"), "Alignment Status": "MATCH" if not align_data.get("is_spoofed") else "MISMATCH / SPOOFED"},
         {"Header Path": "Reply-To", "Address": rep_addr, "Extracted Domain": align_data.get("reply_to_domain"), "Alignment Status": "MATCH" if align_data.get("from_domain") == align_data.get("reply_to_domain") else "DIFFERENT REPLIER"}
     ])
-    st.dataframe(matrix_df, use_container_width=True, hide_index=True)
+    st.dataframe(matrix_df, width='stretch', hide_index=True)
 
     st.markdown("---")
     st.markdown("#### 🔒 Zero-Knowledge Forensic Verification (ZKFV) Proof")
     st.code(merkle_root, language="text")
     st.button("📋 Copy Merkle Root", key="copy_merkle_t2", on_click=lambda: st.write("Copied!"))
 
-    if st.button("🛡️ Verify Cryptographic Proof", use_container_width=True):
+    if st.button("🛡️ Verify Cryptographic Proof", width='stretch'):
         is_valid, curr_root, exp_root = zkfv.verify_evidence_proof(raw_bytes, zkfv_proof)
         if is_valid:
             st.success("✅ **Evidence Integrity Verified**: Merkle root matches cryptographic proof!")
@@ -987,7 +987,7 @@ with tab2:
     with st.expander("📜 View Forensic Audit Ledger", expanded=False):
         audit_logs = zkfv.get_recent_audit_logs(10)
         if audit_logs:
-            st.dataframe(pd.DataFrame(audit_logs), use_container_width=True, hide_index=True)
+            st.dataframe(pd.DataFrame(audit_logs), width='stretch', hide_index=True)
         else:
             st.caption("No audit log entries recorded yet.")
 
@@ -1016,7 +1016,7 @@ with tab3:
                 "Is IP": u_info.get("is_ip", False),
                 "Threat Flags": flags
             })
-        st.dataframe(pd.DataFrame(url_rows), use_container_width=True, hide_index=True)
+        st.dataframe(pd.DataFrame(url_rows), width='stretch', hide_index=True)
     else:
         st.info("No URLs extracted from email body.")
 
@@ -1030,7 +1030,7 @@ with tab3:
             color=alt.Color('category:N', scale=alt.Scale(scheme='tableau10')),
             tooltip=['category', 'points', 'description']
         ).properties(height=200)
-        st.altair_chart(chart, use_container_width=True)
+        st.altair_chart(chart, width='stretch')
     else:
         st.success("Zero threat score penalties detected.")
 
@@ -1071,7 +1071,7 @@ with tab4:
                 "IP Address": hop_ip,
                 "Trust Level": trust_level
             })
-        st.dataframe(pd.DataFrame(hop_rows), use_container_width=True, hide_index=True)
+        st.dataframe(pd.DataFrame(hop_rows), width='stretch', hide_index=True)
     else:
         st.caption("No 'Received:' headers found in MIME data.")
 
@@ -1080,7 +1080,7 @@ with tab4:
     
     graph_data = graph_engine.build_threat_infrastructure_graph(from_addr, ret_addr, urls, geo_results)
     plotly_fig = graph_engine.generate_plotly_threat_graph(graph_data)
-    st.plotly_chart(plotly_fig, use_container_width=True)
+    st.plotly_chart(plotly_fig, width='stretch')
     st.caption(f"Infrastructure Correlation: {graph_data['num_nodes']} Entities, {graph_data['num_edges']} Threat Relationships")
 
     st.markdown("</div>", unsafe_allow_html=True)
@@ -1129,7 +1129,7 @@ with tab5:
                 "ASN": g.get("asn", "N/A"),
                 "Status": g.get("status", "N/A")
             })
-        st.dataframe(pd.DataFrame(geo_rows), use_container_width=True, hide_index=True)
+        st.dataframe(pd.DataFrame(geo_rows), width='stretch', hide_index=True)
 
         for g in geo_results:
             ip_val = g.get("ip", "")
@@ -1146,7 +1146,7 @@ with tab5:
     campaigns = neo4j_engine.correlate_campaigns()
     if campaigns:
         st.markdown(f"Detected **{len(campaigns)}** correlated threat campaign cluster(s):")
-        st.dataframe(pd.DataFrame(campaigns), use_container_width=True, hide_index=True)
+        st.dataframe(pd.DataFrame(campaigns), width='stretch', hide_index=True)
     else:
         st.caption("No multi-email campaign correlations detected.")
 
