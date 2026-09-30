@@ -2,6 +2,9 @@ import re
 import email
 from typing import Dict, List, Any, Tuple
 
+# Thread hijacking detection (Issue #22)
+from backend.detection.thread_hijack import detect_thread_hijacking
+
 BRAND_KEYWORDS = {
     "paypal": "PayPal Inc.",
     "bank": "Financial Institution",
@@ -32,6 +35,22 @@ def detect_xai_contradictions(
     what an email claims (identity, intent, policy) vs technical forensic evidence.
     """
     contradictions = []
+
+    # ── Thread hijacking analysis (Issue #22) ──
+    try:
+        _hijack = detect_thread_hijacking(msg)
+        if _hijack.get("is_hijacked"):
+            for anom in _hijack["anomalies"]:
+                sev = anom.get("severity", "MEDIUM")
+                contradictions.append({
+                    "type": f"THREAD_{anom['type']}",
+                    "severity": sev,
+                    "field": "In-Reply-To/References",
+                    "explanation": anom.get("explanation", ""),
+                    "detail": anom,
+                })
+    except Exception:
+        pass  # never break XAI on hijack errors
 
     subject = str(msg.get("Subject", "")).lower()
     from_header = str(msg.get("From", "")).lower()

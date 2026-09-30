@@ -11,6 +11,7 @@ try:
     from blockchain.anchor import anchor_evidence
 except ImportError:
     anchor_evidence = None
+
 class NumberedCanvas(canvas.Canvas):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

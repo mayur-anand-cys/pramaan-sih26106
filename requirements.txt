@@ -1,2 +1,16 @@
 neo4j==5.24.0
 
+rapidfuzz>=3.0.0
+requests>=2.32.0
+fastapi>=0.115.0
+uvicorn>=0.30.0
+python-multipart>=0.0.9
+shap>=0.52.0
+httpx>=0.27.0
+redis>=5.0.0
+dnspython>=2.6.0
+pyspf>=2.0.14
+dkimpy>=1.1.5
+authheaders>=0.15.2
+pytest>=8.0.0
+pytest-asyncio>=0.24.0

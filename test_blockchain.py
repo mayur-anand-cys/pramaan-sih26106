@@ -1,7 +1,16 @@
 """End-to-end blockchain test for PRAMAAN."""
+import os
+from dotenv import load_dotenv
+
+# Load .env file
+load_dotenv()
+
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
 from blockchain.merkle import build_evidence_merkle_root
 from blockchain.anchor import anchor_evidence, verify_evidence, blockchain_status
-
 
 def main():
     print("\n" + "="*60)

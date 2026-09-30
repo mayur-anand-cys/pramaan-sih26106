@@ -2,6 +2,7 @@ import email
 from email import policy
 import hashlib
 import json
+import logging
 import uvicorn
 from fastapi import FastAPI, File, UploadFile, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
@@ -13,6 +14,27 @@ import zkfv
 import threat_intel
 import graph_engine
 import neo4j_engine
+
+# Threat Intel Aggregator (Issue #9)
+from backend.intel.aggregator import enrich, get_cache_stats
+from backend.intel.models import detect_indicator_type
+from backend.detection.auth_check import verify_email_auth
+
+# Thread hijacking detection (Issue #22)
+from backend.detection.thread_hijack import detect_thread_hijacking
+from backend.detection.xai import (
+    detect_contradictions,
+    explain_prediction,
+    flag_for_analyst_review,
+    log_contradiction_to_audit,
+    LEDGER_DB_FILE
+)
+
+
+logger = logging.getLogger(__name__)
+
+# Typosquat & Homoglyph detection (Issue #7)
+from backend.typosquat.detector import detect_domain, get_risk_score_contribution
 
 app = FastAPI(
     title="PRAMAAN Threat Intelligence & Digital Forensics API",
@@ -69,6 +91,10 @@ async def analyze_eml_file(file: UploadFile = File(...)):
     msg = email.message_from_bytes(raw_bytes, policy=policy.default)
     sha256_hash = hashlib.sha256(raw_bytes).hexdigest()
 
+    # Thread hijacking detection (Issue #22)
+    thread_hijack_result = detect_thread_hijacking(msg)
+    thread_hijack_modifier = thread_hijack_result.get("risk_modifier", 0)
+
     subject_text = str(msg.get("Subject", ""))
     from_header = str(msg.get("From", ""))
     to_header = str(msg.get("To", ""))
@@ -81,6 +107,17 @@ async def analyze_eml_file(file: UploadFile = File(...)):
 
     # 1. Domain Alignment & Headers Analysis
     domain_alignment = threat_intel.analyze_domain_alignment(from_header, return_path, reply_to)
+
+    # 1b. Typosquat & Homoglyph Detection (Issue #7)
+    typosquat_result = None
+    typosquat_bonus = 0
+    _from_domain = domain_alignment.get("from_domain", "") if isinstance(domain_alignment, dict) else ""
+    if _from_domain:
+        try:
+            typosquat_result = detect_domain(_from_domain, check_rdap=True)
+            typosquat_bonus = get_risk_score_contribution(typosquat_result)
+        except Exception as e:
+            print(f"[WARN] Typosquat detection failed: {e}")
 
     # 2. Extract Artifacts
     urls = extract_urls(full_text)
@@ -96,13 +133,63 @@ async def analyze_eml_file(file: UploadFile = File(...)):
     # 5. ML Model Prediction
     ml_prob = predict_phishing_probability(full_text)
 
-    # 6. Auth Headers Check
+    # 6. Auth Headers Check & Protocol Verification
     auth_info = analyze_auth_headers(msg)
+    raw_text = raw_bytes.decode('utf-8', errors='replace')
+    try:
+        source_ip = ip_list[0] if ip_list else None
+        auth_verification = verify_email_auth(raw_text, source_ip=source_ip)
+    except Exception:
+        auth_verification = {
+            "spf": {"dns_result": auth_info.get("spf", "none").lower(), "header_result": auth_info.get("spf", "none").lower()},
+            "dkim": {"dns_result": auth_info.get("dkim", "none").lower(), "header_result": auth_info.get("dkim", "none").lower()},
+            "dmarc": {"dns_result": auth_info.get("dmarc", "none").lower(), "header_result": auth_info.get("dmarc", "none").lower()},
+            "header_trust_score": 50
+        }
 
     # 7. Risk Score & Factor Calculation
     risk_score, risk_factors = calculate_risk_score(
         msg, body_text, analyzed_urls, ips, auth_info, domain_alignment, ml_prob
     )
+
+
+    # 7b. Thread hijacking risk modifier (Issue #22)
+    if thread_hijack_modifier > 0:
+        risk_score = min(100, risk_score + thread_hijack_modifier)
+        risk_factors.append({
+            "factor": "thread_hijacking",
+            "points": thread_hijack_modifier,
+            "detail": (
+                f"Detected {len(thread_hijack_result['anomalies'])} "
+                f"thread hijacking anomalies"
+            ),
+        })
+
+    # 7b. XAI Contradiction Detection & SHAP Explanation
+
+    # 7b. Add typosquat bonus to risk score
+    if typosquat_bonus > 0 and typosquat_result is not None:
+        risk_score = min(100, risk_score + typosquat_bonus)
+        risk_factors.append({
+            "factor": "typosquat_detection",
+            "points": typosquat_bonus,
+            "detail": f"Lookalike domain detected: {typosquat_result.matched_brand or 'unknown brand'}"
+        })
+
+    # 7c. XAI Contradiction Detection & SHAP Explanation
+
+    ml_result = {
+        "probability": ml_prob,
+        "prediction": "phishing" if ml_prob >= 0.5 else "legitimate",
+        "confidence": round(abs(ml_prob - 0.5) * 200, 2),
+        "threat_score": float(risk_score)
+    }
+    xai_contradiction = detect_contradictions(ml_result, auth_verification)
+    xai_explanation = explain_prediction(raw_text, ml_result)
+
+    # Log contradiction event if any rule fired
+    if xai_contradiction.get("has_contradiction"):
+        log_contradiction_to_audit(xai_contradiction, email_id=sha256_hash)
 
     # 8. Infrastructure Graph Construction
     graph_data = graph_engine.build_threat_infrastructure_graph(from_header, return_path, urls, geo_data)
@@ -140,6 +227,12 @@ async def analyze_eml_file(file: UploadFile = File(...)):
             "return_path": return_path
         },
         "authentication": auth_info,
+        "auth_verification": auth_verification,
+        "xai": {
+            "contradiction": xai_contradiction,
+            "explanation": xai_explanation,
+            "requires_analyst_review": xai_contradiction.get("requires_analyst_review", False)
+        },
         "domain_alignment": domain_alignment,
         "risk_factors": risk_factors,
         "extracted_urls": analyzed_urls,
@@ -151,8 +244,10 @@ async def analyze_eml_file(file: UploadFile = File(...)):
             "edges": graph_data["edges"]
         },
         "neo4j_ingestion": neo4j_res,
-        "zkfv_proof": zkfv_proof
+        "zkfv_proof": zkfv_proof,
+        "thread_hijacking": thread_hijack_result
     }
+
 
 @app.post("/api/v1/verify-zkfv")
 async def verify_zkfv_proof(file: UploadFile = File(...), proof_json: str = Query(...)):
@@ -174,6 +269,61 @@ async def verify_zkfv_proof(file: UploadFile = File(...), proof_json: str = Quer
 def get_audit_ledger(limit: int = 20):
     """Retrieve evidence audit ledger entries from SQLite database."""
     return zkfv.get_recent_audit_logs(limit)
+
+@app.get("/api/v1/xai/{email_id}")
+def get_xai_audit(email_id: str):
+    """Retrieve XAI contradiction audit logs for an email SHA-256."""
+    try:
+        import sqlite3
+        conn = sqlite3.connect(LEDGER_DB_FILE)
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS contradiction_audit_ledger (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                timestamp TEXT NOT NULL,
+                email_id TEXT NOT NULL,
+                severity TEXT NOT NULL,
+                requires_analyst_review INTEGER NOT NULL,
+                alerts_count INTEGER NOT NULL,
+                summary TEXT NOT NULL,
+                contradiction_json TEXT NOT NULL
+            )
+            """
+        )
+        cursor.execute(
+            """
+            SELECT id, timestamp, email_id, severity, requires_analyst_review, alerts_count, summary, contradiction_json
+            FROM contradiction_audit_ledger
+            WHERE email_id = ?
+            ORDER BY id DESC
+            """,
+            (email_id,)
+        )
+        rows = cursor.fetchall()
+        conn.close()
+        records = []
+        for r in rows:
+            records.append({
+                "id": r[0],
+                "timestamp": r[1],
+                "email_id": r[2],
+                "severity": r[3],
+                "requires_analyst_review": bool(r[4]),
+                "alerts_count": r[5],
+                "summary": r[6],
+                "contradiction": json.loads(r[7]) if r[7] else {}
+            })
+        return {"email_id": email_id, "count": len(records), "records": records}
+    except Exception:
+        logger.exception("Failed to retrieve XAI audit for email_id=%s", email_id)
+        return {
+            "email_id": email_id,
+            "count": 0,
+            "records": [],
+            "error": "An internal error occurred while retrieving audit data."
+        }
+
 
 @app.get("/api/v1/neo4j/status")
 def get_neo4j_status():
@@ -297,3 +447,24 @@ def calculate_risk_score(msg, body, urls, ips, auth_info, domain_alignment, ml_p
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
+
+# ═══════════════════════════════════════════════════════════════
+# Threat Intel Aggregator (Issue #9)
+# ═══════════════════════════════════════════════════════════════
+
+@app.get("/api/v1/intel/enrich")
+async def enrich_indicator(indicator: str = Query(..., description="IP, domain, or URL to enrich")):
+    """
+    Enrich an indicator using all 9 threat intel providers in parallel.
+    Returns verdict, threat_score, tags, and per-provider status.
+    """
+    indicator_type = detect_indicator_type(indicator)
+    result = await enrich(indicator, indicator_type=indicator_type)
+    return result.to_dict()
+
+
+@app.get("/api/v1/intel/cache/stats")
+def intel_cache_stats():
+    """Return cache performance stats."""
+    return get_cache_stats()
