@@ -96,14 +96,6 @@ def generate_plotly_threat_graph(graph_data: Dict[str, Any]) -> go.Figure:
         "URL": "#ff5252",
     }
 
-    z_levels = {
-        "EMAIL": 0.0,
-        "DOMAIN": 1.0,
-        "URL": 2.0,
-        "IP": 3.0,
-        "ASN": 4.0,
-    }
-
     # --- edge traces (lines connecting nodes) ---
     edge_x = []
     edge_y = []
