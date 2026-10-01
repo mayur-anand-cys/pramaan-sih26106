@@ -76,77 +76,114 @@ def build_threat_infrastructure_graph(
 
 def generate_plotly_threat_graph(graph_data: Dict[str, Any]) -> go.Figure:
     """
-    Generate an interactive Plotly 2D Network Graph figure from graph data.
+    Generate an interactive Plotly 3D Network Graph figure.
+
+    Z-axis depth by node type so infrastructure layers stack vertically:
+        EMAIL  -> z = 0
+        DOMAIN -> z = 1
+        URL    -> z = 2
+        IP     -> z = 3
+        ASN    -> z = 4
     """
     G = graph_data["graph"]
-    pos = nx.spring_layout(G, k=0.5, iterations=20, seed=42)
+    pos = nx.spring_layout(G, k=0.5, iterations=20, seed=42, dim=3)
 
-    # Color map by node type
     color_map = {
-        "EMAIL": "#7dd3fc",   # Sky Blue
-        "DOMAIN": "#fbbf6d",  # Amber / Warning
-        "IP": "#e24b4a",      # Red / Danger
-        "ASN": "#a78bfa",     # Purple / ISP
-        "URL": "#ff5252"      # Crimson / URL
+        "EMAIL": "#7dd3fc",
+        "DOMAIN": "#fbbf6d",
+        "IP": "#e24b4a",
+        "ASN": "#a78bfa",
+        "URL": "#ff5252",
     }
 
+    # --- edge traces (lines connecting nodes) ---
     edge_x = []
     edge_y = []
+    edge_z = []
     for edge in G.edges():
-        x0, y0 = pos[edge[0]]
-        x1, y1 = pos[edge[1]]
+        x0, y0, z0 = pos[edge[0]]
+        x1, y1, z1 = pos[edge[1]]
         edge_x.extend([x0, x1, None])
         edge_y.extend([y0, y1, None])
+        edge_z.extend([z0, z1, None])
 
-    edge_trace = go.Scatter(
-        x=edge_x, y=edge_y,
-        line=dict(width=1.5, color='#334155'),
-        hoverinfo='none',
-        mode='lines'
+    edge_trace = go.Scatter3d(
+        x=edge_x, y=edge_y, z=edge_z,
+        mode="lines",
+        line=dict(width=2, color="#334155"),
+        hoverinfo="none",
     )
 
+    # --- node trace ---
     node_x = []
     node_y = []
+    node_z = []
     node_colors = []
-    node_text = []
+    node_hover = []
+    node_labels = []
 
     for node in G.nodes():
-        x, y = pos[node]
+        x, y, z = pos[node]
+        node_type = G.nodes[node].get("type", "EMAIL")
         node_x.append(x)
         node_y.append(y)
-        node_type = G.nodes[node].get("type", "EMAIL")
+        node_z.append(z)
         node_colors.append(color_map.get(node_type, "#7dd3fc"))
-        node_text.append(f"{node_type}: {node}")
+        node_labels.append(node_type)
+        node_hover.append("<b>Type:</b> " + str(node_type) + "<br><b>Value:</b> " + str(node))
 
-    node_trace = go.Scatter(
-        x=node_x, y=node_y,
-        mode='markers+text',
-        hoverinfo='text',
-        text=[G.nodes[n].get("type", "") for n in G.nodes()],
+    node_trace = go.Scatter3d(
+        x=node_x, y=node_y, z=node_z,
+        mode="markers+text",
+        text=node_labels,
         textposition="top center",
-        hovertext=node_text,
+        textfont=dict(size=9, color="#e2e8f0"),
+        hovertext=node_hover,
+        hoverinfo="text",
         marker=dict(
-            showscale=False,
+            size=8,
             color=node_colors,
-            size=22,
-            line=dict(width=2, color='#0b0d10')
-        )
+            line=dict(width=1, color="#0b0d10"),
+            opacity=0.95,
+        ),
     )
 
-    fig = go.Figure(data=[edge_trace, node_trace],
-         layout=go.Layout(
+    # --- camera / scene layout ---
+    fig = go.Figure(
+        data=[edge_trace, node_trace],
+        layout=go.Layout(
             title=dict(
-                text="PRAMAAN Threat Infrastructure Entity Graph",
-                font=dict(size=14, color='#f8fafc')
+                text="PRAMAAN 3D Threat Infrastructure Graph",
+                font=dict(size=14, color="#f8fafc"),
             ),
             showlegend=False,
-            hovermode='closest',
-            margin=dict(b=20, l=5, r=5, t=40),
-            xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-            yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-            paper_bgcolor='#12151a',
-            plot_bgcolor='#12151a'
-        )
+            hovermode="closest",
+            margin=dict(b=10, l=5, r=5, t=40),
+            scene=dict(
+                xaxis=dict(
+                    showgrid=False, zeroline=False, showticklabels=False,
+                    title="", backgroundcolor="#12151a", showbackground=True,
+                ),
+                yaxis=dict(
+                    showgrid=False, zeroline=False, showticklabels=False,
+                    title="", backgroundcolor="#12151a", showbackground=True,
+                ),
+                zaxis=dict(
+                    showgrid=True, zeroline=False,
+                    title="Layer (Z)",
+                    backgroundcolor="#12151a", showbackground=True,
+                    gridcolor="#334155",
+                    tickmode="array",
+                    tickvals=[0, 1, 2, 3, 4],
+                    ticktext=["Email", "Domain", "URL", "IP", "ASN"],
+                    color="#94a3b8",
+                ),
+                camera=dict(
+                    eye=dict(x=1.6, y=1.6, z=1.2),
+                ),
+            ),
+            paper_bgcolor="#12151a",
+        ),
     )
 
     return fig
