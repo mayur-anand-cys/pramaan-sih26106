@@ -13,7 +13,8 @@
 
 **Problem Statement:** SIH26106 · Blockchain & Cybersecurity  
 **Organization:** AICTE Cyber Security Cell  
-**Team:** Team Apex (6 members)
+**Team:** Team Apex (6 members)  
+**Live Sepolia Contract:** [`0x87f8CD4c4628D77aCDfb76Ee6428Fa98dc2dEed8`](https://sepolia.etherscan.io/address/0x87f8CD4c4628D77aCDfb76Ee6428Fa98dc2dEed8)
 
 ---
 
@@ -58,7 +59,7 @@ Every feature below is tagged honestly:
 | Security hardening (zip bombs, MIME recursion, prompt injection) | ✅ Shipped | `security_hardening.py` |
 | PII masking for DPDP Act 2023 | ✅ Shipped | `backend/reporting/pii_mask.py` |
 | Chain-of-custody PDF with page numbers | ✅ Shipped | `report_gen.py` |
-| Live threat intel feeds (VirusTotal, AbuseIPDB, Shodan, etc.) | 🔵 In PR | Issue #9 |
+| Live threat intel feeds (VirusTotal, AbuseIPDB, Shodan, etc.) | ✅ Shipped | `backend/intel/` |
 | OAuth 2.0 live inbox firewall (M365, Gmail) | ⏳ Roadmap | Grand Finale target |
 | Hyperledger Fabric dual-anchor | ⏳ Roadmap | Enterprise pilot phase |
 
@@ -96,15 +97,15 @@ flowchart TD
 
 To handle the industry-wide problem where webmail clients (Gmail, Outlook) strip client IPs from headers, PRAMAAN implements a **multi-tier fallback** to locate the sender's origin:
 
-| Tier | Forensic Indicator | Example | Confidence |
+| Tier | Forensic Indicator | Example | Reliability |
 |------|--------------------|---------|-----------|
-| 1 | Direct source IP from Received-SPF | `client-ip=103.108.118.85` | Exact City (85–95%) |
-| 2 | Domain mail infrastructure (MX DNS) | `@ippbonline.co.in` → MX IP | Server City (70–80%) |
-| 3 | Client machine clock offset | `Date: ... +0530` | Timezone Capital (55–65%) |
-| 4 | ccTLD sovereign jurisdiction | `.in`, `.gov.in`, `.ru` | Sovereign Capital (50–60%) |
-| 5 | Regional webmail provider | `rediffmail.com` → Mumbai | Provider HQ (50–55%) |
-| 6 | Indic script & entity corroboration | Devanagari, ₹ / INR, RBI | National Jurisdiction (45–50%) |
-| 7 | Global mail hub baseline | Provider global infrastructure | Baseline Cloud Center (40–50%) |
+| 1 | Direct source IP from Received-SPF | `client-ip=103.108.118.85` | High |
+| 2 | Domain mail infrastructure (MX DNS) | `@ippbonline.co.in` → MX IP | High |
+| 3 | Client machine clock offset | `Date: ... +0530` | Medium |
+| 4 | ccTLD sovereign jurisdiction | `.in`, `.gov.in`, `.ru` | Medium |
+| 5 | Regional webmail provider | `rediffmail.com` → Mumbai | Medium |
+| 6 | Indic script & entity corroboration | Devanagari, ₹ / INR, RBI | Low-Medium |
+| 7 | Global mail hub baseline | Provider global infrastructure | Low |
 
 ---
 
@@ -309,7 +310,7 @@ pramaan-sih26106/
 │   ├── merkle.py
 │   └── contracts/PramaanEvidence.sol
 ├── backend/
-│   ├── auth/                    # OAuth + user DB
+│   ├── auth/                    # PBKDF2 login + SQLite user DB
 │   ├── detection/               # Thread hijack detection
 │   ├── intel/                   # Threat intel aggregator
 │   ├── reporting/pii_mask.py    # DPDP Act PII masking
@@ -326,15 +327,14 @@ pramaan-sih26106/
 
 | Role | Name | GitHub |
 |------|------|--------|
-| 👑 Team Lead | Sudarshan Iyengar | [@sudarshaniyengar324-cloud](https://github.com/sudarshaniyengar324-cloud) |
-| 🛡️ Member | Mayur Anand | [@mayur-anand-cys](https://github.com/mayur-anand-cys) |
+| 👑 Team Lead | Mayur Anand | [@mayur-anand-cys](https://github.com/mayur-anand-cys) |
 | 🛡️ Member | Shreya Garje | [@shreyagarje07-star](https://github.com/shreyagarje07-star) |
 | 🛡️ Member | Keerthana C | [@keerthanac0905](https://github.com/keerthanac0905) |
 | 🛡️ Member | Sneha Namratha | [@snehanamratha](https://github.com/snehanamratha) |
 | 🛡️ Member | Charitha Sri Reddy | [@charithasrireddy](https://github.com/charithasrireddy) |
 
-**Institute / College:** _TBD_  
-**Team ID:** _TBD_
+**Institute / College:** Vemana Institute of Technology, Bengaluru  
+**Team ID:** SIH26106-Apex
 
 ---
 
