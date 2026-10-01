@@ -7,6 +7,14 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+# Ensure UTF-8 output on Windows (fixes Cyrillic homoglyph tests)
+try:
+    import sys as _sys
+    _sys.stdout.reconfigure(encoding="utf-8")
+    _sys.stderr.reconfigure(encoding="utf-8")
+except Exception:
+    pass
+
 from backend.typosquat.detector import detect_domain, detect_domains
 
 
