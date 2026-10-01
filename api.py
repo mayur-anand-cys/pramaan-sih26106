@@ -182,7 +182,8 @@ async def analyze_eml_file(file: UploadFile = File(...)):
         "probability": ml_prob,
         "prediction": "phishing" if ml_prob >= 0.5 else "legitimate",
         "confidence": round(abs(ml_prob - 0.5) * 200, 2),
-        "threat_score": float(risk_score)
+        "threat_score": float(risk_score),
+        "raw_email": raw_text,
     }
     xai_contradiction = detect_contradictions(ml_result, auth_verification)
     xai_explanation = explain_prediction(raw_text, ml_result)
