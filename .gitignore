@@ -34,3 +34,5 @@ Thumbs.db
 Docker Desktop Installer.exe
 *.exe
 backend/auth/users.db
+Docker Desktop Installer.exe
+*.exe
