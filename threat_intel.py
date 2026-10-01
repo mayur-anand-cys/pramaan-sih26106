@@ -122,6 +122,118 @@ def analyze_url_structure(urls: List[str]) -> List[Dict[str, Any]]:
 
     return analyzed_urls
 
+
+def follow_redirects(url: str, max_hops: int = 5, timeout: float = 5.0) -> Dict[str, Any]:
+    """Trace redirect chains (HTTP 3xx + meta-refresh + JS location).
+
+    Uses requests.Session with allow_redirects=True, max_redirects=max_hops.
+    Also scans response bodies for <meta http-equiv="refresh"> and simple
+    JS `location = "..."` patterns, WITHOUT executing JavaScript.
+
+    Returns:
+        {
+            "final_url": str,
+            "final_domain": str,
+            "chain": [{"url": str, "status": int|None, "type": "http"|"meta"|"js"}],
+            "hops": int,
+            "error": str | None,
+        }
+    """
+    import re
+    try:
+        from urllib.parse import urlparse as _urlparse
+    except Exception:
+        _urlparse = None
+
+    result = {
+        "final_url": url,
+        "final_domain": "",
+        "chain": [],
+        "hops": 0,
+        "error": None,
+    }
+
+    if not url or not isinstance(url, str):
+        result["error"] = "invalid_url"
+        return result
+
+    chain = [{"url": url, "status": None, "type": "input"}]
+
+    try:
+        session = requests.Session()
+        session.max_redirects = max_hops
+        session.headers.update({"User-Agent": "PRAMAAN-Forensics/1.0"})
+
+        current = url
+        for hop in range(max_hops):
+            try:
+                resp = session.get(current, timeout=timeout, allow_redirects=False)
+            except requests.exceptions.Timeout:
+                chain[-1]["status"] = "TIMEOUT"
+                result["error"] = "timeout_at_hop_%d" % hop
+                break
+            except requests.exceptions.RequestException as exc:
+                chain[-1]["status"] = "ERROR"
+                result["error"] = "request_error: %s" % str(exc)[:120]
+                break
+
+            status = resp.status_code
+            chain[-1]["status"] = status
+
+            # HTTP 3xx redirect
+            if 300 <= status < 400:
+                location = resp.headers.get("Location", "")
+                if not location:
+                    break
+                # Resolve relative
+                if location.startswith("/"):
+                    parsed = _urlparse(current)
+                    location = "%s://%s%s" % (parsed.scheme, parsed.netloc, location)
+                chain.append({"url": location, "status": None, "type": "http"})
+                current = location
+                continue
+
+            # 200 OK: scan body for meta-refresh / JS location
+            body = resp.text or ""
+
+            meta_match = re.search(
+                r'<meta[^>]+http-equiv\s*=\s*["\']?refresh["\']?[^>]*content\s*=\s*["\']?[^;]*;\s*url=([^"\'>\s]+)',
+                body,
+                re.IGNORECASE,
+            )
+            if meta_match:
+                target = meta_match.group(1).strip()
+                chain.append({"url": target, "status": None, "type": "meta"})
+                current = target
+                continue
+
+            js_match = re.search(
+                r'(?:window\.|document\.)?location(?:\.href)?\s*=\s*["\']([^"\']+)["\']',
+                body,
+            )
+            if js_match:
+                target = js_match.group(1).strip()
+                chain.append({"url": target, "status": None, "type": "js"})
+                current = target
+                continue
+
+            # No further redirect
+            break
+
+        result["final_url"] = current
+        result["chain"] = chain
+        result["hops"] = len(chain) - 1
+
+        if _urlparse:
+            try:
+                result["final_domain"] = _urlparse(current).hostname or ""
+            except Exception:
+                result["final_domain"] = ""
+
+    except Exception as exc:
+        result["error"] = "unexpected: %s" % str(exc)[:120]
+
+    return result
 def geolocate_ip_cached(ip: str, cache: Dict[str, dict] = None) -> Dict[str, Any]:
     """
     Geolocate IPv4 address using public IP API with local caching & private IP validation.

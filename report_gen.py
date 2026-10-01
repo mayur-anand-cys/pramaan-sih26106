@@ -6,7 +6,17 @@ from reportlab.platypus import (
     SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, KeepTogether
 )
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.pdfgen import canvas
+ 
+
+def _defang_url(value):
+    """Defang a URL or domain for safe PDF rendering."""
+    if not value:
+        return ""
+    v = str(value)
+    v = v.replace("https://", "hxxps://").replace("http://", "hxxp://")
+    v = v.replace(".", "[.]")
+    return v 
+    from reportlab.pdfgen import canvas
 try:
     from blockchain.anchor import anchor_evidence
 except ImportError:
@@ -273,22 +283,60 @@ def generate_pdf_report(
 
     elements.append(Spacer(1, 10))
 
-    # Section 4: Extracted URLs
-    elements.append(Paragraph("<b>4. Extracted URLs</b>", h2_style))
+       # Section 4: Extracted URLs (with redirect chains, defanged)
+    elements.append(Paragraph("<b>4. Extracted URLs (defanged)</b>", h2_style))
     if urls:
-        url_rows = [["#", "Extracted URL"]]
+        url_rows = [["#", "Extracted URL (defanged)", "Final Domain (after redirects)"]]
         for idx, u in enumerate(urls, 1):
+            if isinstance(u, dict):
+                raw_url = u.get("url", "")
+                final_domain = u.get("final_domain", "") or u.get("domain", "")
+            else:
+                raw_url = u
+                final_domain = ""
             url_rows.append([
                 Paragraph(str(idx), body_style),
-                Paragraph(f"<code>{u}</code>", body_style)
+                Paragraph("<code>" + _defang_url(raw_url) + "</code>", body_style),
+                Paragraph(_defang_url(final_domain) if final_domain else "-", body_style),
             ])
-        url_table = Table(url_rows, colWidths=[30, 510])
+        url_table = Table(url_rows, colWidths=[25, 300, 215])
         url_table.setStyle(TableStyle([
             ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#E2E8F0')),
             ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#CBD5E1')),
             ('PADDING', (0, 0), (-1, -1), 4),
         ]))
         elements.append(url_table)
+
+        # Redirect chains (defanged intermediates)
+        for idx, u in enumerate(urls, 1):
+            if not isinstance(u, dict):
+                continue
+            chain = u.get("redirect_chain", []) or []
+            if len(chain) < 2:
+                continue
+            elements.append(Spacer(1, 6))
+            elements.append(Paragraph(
+                "<b>Redirect chain for URL #" + str(idx) + "</b>",
+                body_style
+            ))
+            chain_rows = [["Hop", "URL (defanged)", "Type", "Status"]]
+            for hop_idx, hop in enumerate(chain):
+                if not isinstance(hop, dict):
+                    continue
+                chain_rows.append([
+                    Paragraph(str(hop_idx), body_style),
+                    Paragraph("<code>" + _defang_url(hop.get("url", "")) + "</code>", body_style),
+                    Paragraph(str(hop.get("type", "-")), body_style),
+                    Paragraph(str(hop.get("status", "-")), body_style),
+                ])
+            chain_table = Table(chain_rows, colWidths=[30, 340, 60, 110])
+            chain_table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#FEF3C7')),
+                ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#FCD34D')),
+                ('PADDING', (0, 0), (-1, -1), 3),
+                ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+            ]))
+            elements.append(chain_table)
     else:
         elements.append(Paragraph("No URLs extracted.", body_style))
 

@@ -126,7 +126,18 @@ async def analyze_eml_file(file: UploadFile = File(...)):
     # 3. URL Structural Analysis & Threat Intel
     analyzed_urls = threat_intel.analyze_url_structure(urls)
 
-    # 4. Fast Parallel IP Geolocation
+ 
+    # Trace redirect chains; attach final domain + chain to each entry
+    for _u in analyzed_urls:
+        try:
+            _r = threat_intel.follow_redirects(_u["url"])
+            _u["redirect_chain"] = _r.get("chain", [])
+            _u["final_url"] = _r.get("final_url", _u["url"])
+            _u["final_domain"] = _r.get("final_domain", _u.get("domain", ""))
+        except Exception:
+            _u["redirect_chain"] = []
+            _u["final_url"] = _u["url"]
+            _u["final_domain"] = _u.get("domain", "")   # 4. Fast Parallel IP Geolocation
     ip_list = [item["ip"] for item in ips]
     geo_data = threat_intel.batch_geolocate_ips(ip_list)
 
