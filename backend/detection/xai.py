@@ -1,3 +1,4 @@
+from backend.detection.font_forensics import analyze_font_obfuscation
 # backend/detection/xai.py
 """
 Explainable AI (XAI) Contradiction Detection & Model Explanation Engine.
@@ -129,6 +130,7 @@ def detect_contradictions(ml_result: dict, auth_result: dict) -> dict:
     - Rule 1 (CRITICAL): AI says 'legitimate' BUT SPF/DKIM/DMARC all FAIL
     - Rule 2 (HIGH): AI says 'phishing' BUT all auth PASS (AI may be overzealous)
     - Rule 3 (AMBER): AI confidence < 60% AND threat score > 80
+    - Rule 4 (the Font Obfuscation alert)
     """
     if not isinstance(ml_result, dict):
         ml_result = {}
@@ -228,6 +230,34 @@ def detect_contradictions(ml_result: dict, auth_result: dict) -> dict:
                 "ml_probability": ml_prob
             }
         })
+    # Rule 4: Embedded font obfuscation (glyph substitution attack)
+    raw_email_text = ml_result.get("raw_email", ml_result.get("raw_text", ""))
+    if raw_email_text:
+        try:
+            font_info = analyze_font_obfuscation(raw_email_text, raw_email_text)
+        except Exception:
+            font_info = {"has_obfuscation": False}
+
+        if font_info.get("has_obfuscation"):
+            alerts.append({
+                "rule_id": "RULE_4_FONT_OBFUSCATION",
+                "severity": "HIGH",
+                "title": "HIGH: Font Obfuscation - Glyph Substitution Detected",
+                "description": (
+                    "Embedded web font contains "
+                    + str(font_info["mismatch_count"])
+                    + " glyph mismatch(es). Raw HTML text does not match "
+                    + "rendered text. Visually intended: '"
+                    + str(font_info["visually_intended_text"][:80]) + "'"
+                ),
+                "evidence": {
+                    "fonts_analyzed": font_info["fonts_found"],
+                    "mismatches": font_info["mismatches"],
+                    "visually_intended_text": font_info["visually_intended_text"],
+                    "risk_modifier": font_info["risk_modifier"],
+                }
+            })
+
 
     # Determine highest severity
     has_critical = any(a["severity"] == "CRITICAL" for a in alerts)
