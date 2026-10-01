@@ -90,6 +90,9 @@ def detect_glyph_mismatch(font_bytes: bytes) -> dict:
             })
 
     printable_count = len([c for c in cmap if 0x20 <= c <= 0x7E])
+    # Guard against subsetting false positives: real attacks remap many glyphs
+    if len(mismatches) < 3:
+        mismatches = []
     return {
         "mismatches": mismatches,
         "analyzable": True,

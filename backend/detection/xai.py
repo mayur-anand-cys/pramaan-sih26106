@@ -1,4 +1,3 @@
-from backend.detection.font_forensics import analyze_font_obfuscation
 # backend/detection/xai.py
 """
 Explainable AI (XAI) Contradiction Detection & Model Explanation Engine.
@@ -7,6 +6,7 @@ and cryptographic email authentication protocols, alongside SHAP feature attribu
 
 Part of PRAMAAN SOC Threat Intelligence Platform (Issue #4).
 """
+from backend.detection.font_forensics import analyze_font_obfuscation
 
 import os
 import sys
