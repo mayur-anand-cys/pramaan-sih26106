@@ -367,7 +367,7 @@ with st.sidebar:
 
     st.markdown("---")
     st.markdown("### SOC Data Source")
-    use_sample = st.checkbox("Use Sample Phishing EML", value=False)
+    use_sample = st.checkbox(" Use Sample Phishing EML", value=False)
     uploaded_file = st.file_uploader("Upload .eml File", type=["eml"])
 
     st.markdown("---")
@@ -528,7 +528,7 @@ if raw_bytes is None:
             st.rerun()
 
         st.markdown("<div style='text-align: center; margin-top: 15px;'>", unsafe_allow_html=True)
-        if st.checkbox("Use Sample Phishing EML (gmail.eml)", key="landing_sample"):
+        if st.checkbox(" Use Sample Phishing EML (gmail.eml)", key="landing_sample"):
             sample_path = Path(__file__).parent / "gmail.eml"
             if sample_path.exists():
                 raw_bytes = sample_path.read_bytes()
@@ -674,17 +674,17 @@ with top_col1:
     if xai_result.get("requires_analyst_review"):
         analyst_badge = """
         <span style="background-color: rgba(239, 68, 68, 0.18); border: 1.5px solid #ef4444; color: #ef4444; padding: 4px 12px; border-radius: 6px; font-weight: 800; font-size: 0.85rem; font-family: 'JetBrains Mono', monospace; margin-left: 12px; display: inline-block; vertical-align: middle;">
-            ANALYST REVIEW REQUIRED
+             ANALYST REVIEW REQUIRED
         </span>
         """
     st.markdown(f"""
     <div style="margin-top: -15px; margin-bottom: 8px;">
-        <span style="font-size: 1.4rem; font-weight: 800; color: #f8fafc;">Target Artifact:</span> 
+        <span style="font-size: 1.4rem; font-weight: 800; color: #f8fafc;"> Target Artifact:</span> 
         <code style="font-size: 1.2rem; color: #7dd3fc; background-color: #1e293b; padding: 4px 10px; border-radius: 6px;">{file_name}</code>
         {analyst_badge}
     </div>
     """, unsafe_allow_html=True)
-    if st.button("Upload another .eml", key="reset_btn"):
+    if st.button(" Upload another .eml", key="reset_btn"):
         st.session_state.clear()
         st.rerun()
 
@@ -693,7 +693,7 @@ with top_col2:
     btn_c1, btn_c2 = st.columns(2)
     with btn_c1:
         st.download_button(
-            label="Download Report",
+            label=" Download Report",
             data=pdf_bytes,
             file_name=f"PRAMAAN_Report_{file_name}.pdf",
             mime="application/pdf",
@@ -702,7 +702,7 @@ with top_col2:
     with btn_c2:
         st.markdown("""
         <div class="stAppDeployButton">
-            <button>Deploy</button>
+            <button> Deploy</button>
         </div>
         """, unsafe_allow_html=True)
 
@@ -711,7 +711,7 @@ st.markdown("<div style='margin-bottom: 12px;'></div>", unsafe_allow_html=True)
 # Helper function for legal disclaimer footer
 def render_legal_disclaimer():
     st.markdown("<div style='margin-top: 30px;'></div>", unsafe_allow_html=True)
-    with st.expander("Legal & Forensic Disclaimer", expanded=False):
+    with st.expander(" Legal & Forensic Disclaimer", expanded=False):
         st.caption(
             "This software is designed exclusively for educational, cybersecurity analysis, and digital forensics purposes. "
             "The calculated risk score and extracted threat artifacts are derived from automated regex heuristics, IP geolocation, ML models, and cryptographic hashes. "
@@ -750,7 +750,7 @@ with tab1:
                     </div>
                 </div>
                 <span style="background-color: #ef4444; color: #ffffff; padding: 6px 14px; border-radius: 9999px; font-weight: 800; font-size: 0.85rem; letter-spacing: 0.05em;">
-                    ANALYST REVIEW REQUIRED
+                     ANALYST REVIEW REQUIRED
                 </span>
             </div>
         </div>
@@ -770,7 +770,7 @@ with tab1:
                     </div>
                 </div>
                 <span style="background-color: #f97316; color: #ffffff; padding: 6px 14px; border-radius: 9999px; font-weight: 800; font-size: 0.85rem; letter-spacing: 0.05em;">
-                    ANALYST REVIEW REQUIRED
+                     ANALYST REVIEW REQUIRED
                 </span>
             </div>
         </div>
@@ -820,7 +820,7 @@ with tab1:
         st.markdown("#### Executive Incident Verdict")
         st.markdown(f"**ML Phishing Probability**: `<font color='#7dd3fc'><b>{ml_prob * 100:.1f}%</b></font>`", unsafe_allow_html=True)
         st.markdown(f"**Target EML Hash**: `<code class='mono-font'>{sha256_hash}</code>`", unsafe_allow_html=True)
-        st.button("Copy Hash", key="copy_hash_t1", on_click=lambda: st.write("Copied!"))
+        st.button(" Copy Hash", key="copy_hash_t1", on_click=lambda: st.write("Copied!"))
 
         st.markdown("##### Key Threat Findings")
         if risk_factors:
@@ -975,16 +975,16 @@ with tab2:
     st.markdown("---")
     st.markdown("#### Zero-Knowledge Forensic Verification (ZKFV) Proof")
     st.code(merkle_root, language="text")
-    st.button("Copy Merkle Root", key="copy_merkle_t2", on_click=lambda: st.write("Copied!"))
+    st.button(" Copy Merkle Root", key="copy_merkle_t2", on_click=lambda: st.write("Copied!"))
 
-    if st.button("Verify Cryptographic Proof", width='stretch'):
+    if st.button(" Verify Cryptographic Proof", width='stretch'):
         is_valid, curr_root, exp_root = zkfv.verify_evidence_proof(raw_bytes, zkfv_proof)
         if is_valid:
-            st.success("**Evidence Integrity Verified**: Merkle root matches cryptographic proof!")
+            st.success(" **Evidence Integrity Verified**: Merkle root matches cryptographic proof!")
         else:
-            st.error("**Verification Failed**: Proof mismatch!")
+            st.error(" **Verification Failed**: Proof mismatch!")
 
-    with st.expander("View Forensic Audit Ledger", expanded=False):
+    with st.expander(" View Forensic Audit Ledger", expanded=False):
         audit_logs = zkfv.get_recent_audit_logs(10)
         if audit_logs:
             st.dataframe(pd.DataFrame(audit_logs), width='stretch', hide_index=True)
@@ -1133,7 +1133,7 @@ with tab5:
 
         for g in geo_results:
             ip_val = g.get("ip", "")
-            st.button(f"Copy IP {ip_val}", key=f"copy_ip_{ip_val}", on_click=lambda: st.write("Copied!"))
+            st.button(f" Copy IP {ip_val}", key=f"copy_ip_{ip_val}", on_click=lambda: st.write("Copied!"))
     else:
         st.caption("No IP addresses extracted.")
 
