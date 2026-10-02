@@ -24,7 +24,7 @@
 
 ---
 
-## 📌 What is PRAMAAN?
+## What is PRAMAAN?
 
 Traditional email filters **block** threats. They don't **explain** them, **trace** them, or **prove** they happened.
 
@@ -40,7 +40,7 @@ PRAMAAN is an explainable, forensic-grade email threat investigation platform. I
 
 ---
 
-## ✨ Feature Status
+## Feature Status
 
 Every feature below is tagged honestly:
 
@@ -71,7 +71,7 @@ Every feature below is tagged honestly:
 
 ---
 
-## 🏗️ System Architecture
+## System Architecture
 
 ![PRAMAAN Architecture](docs/architecture.png)
 
@@ -99,7 +99,7 @@ flowchart TD
 
 ---
 
-## 🗺️ Geolocation Inference Cascade
+## Geolocation Inference Cascade
 
 To handle the industry-wide problem where webmail clients (Gmail, Outlook) strip client IPs from headers, PRAMAAN implements a **multi-tier fallback** to locate the sender's origin:
 
@@ -115,7 +115,7 @@ To handle the industry-wide problem where webmail clients (Gmail, Outlook) strip
 
 ---
 
-## 🖥️ Prototype Walkthrough
+## Prototype Walkthrough
 
 ### 1. Triage Overview — Threat Score & XAI Verdict
 
@@ -187,7 +187,7 @@ World map showing the attacker's infrastructure origin — city, country, ASN, a
 
 Detailed IP intelligence table (ASN, ISP, country) and live Neo4j connection status.
 
-## 🧰 Tech Stack
+## Tech Stack
 
 | Layer | Technologies |
 |-------|-------------|
@@ -204,7 +204,7 @@ Detailed IP intelligence table (ASN, ISP, country) and live Neo4j connection sta
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 
@@ -249,7 +249,7 @@ API docs at `http://localhost:8000/docs`.
 
 ---
 
-## ⚙️ Environment Configuration
+## Environment Configuration
 
 Copy `.env.example` to `.env` and fill in optional keys. All keys are **optional** — missing keys degrade gracefully.
 
@@ -275,7 +275,7 @@ REDIS_URL=redis://localhost:6379/0
 
 ---
 
-## 🧪 Testing
+## Testing
 
 Run the full test suite:
 
@@ -293,7 +293,7 @@ pytest tests -q
 
 ---
 
-## 📁 Repository Structure
+## Repository Structure
 
 ```
 pramaan-sih26106/
@@ -329,7 +329,7 @@ pramaan-sih26106/
 
 ---
 
-## 👥 Team Apex
+## Team Apex
 
 | Role | Name | GitHub |
 |------|------|--------|
@@ -402,13 +402,13 @@ PRAMAAN is designed for deployment within Indian government and law enforcement 
 
 ---
 
-## 📄 License
+## License
 
 MIT License — see [LICENSE](LICENSE) for details.
 
 ---
 
-## 📚 Project Documentation
+## Project Documentation
 
 - [Product Requirements Document](docs/PRD.md)
 - [Deployment Plan (6-month post-SIH)](docs/DEPLOYMENT_PLAN.md)
