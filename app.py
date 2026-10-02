@@ -33,7 +33,7 @@ from security_hardening import extract_headers_with_forensics
 # Page Configuration
 st.set_page_config(
     page_title="PRAMAAN | SOC Threat Intelligence & Digital Forensics",
-    page_icon="🛡️",
+    page_icon="",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -357,7 +357,7 @@ if 'theme' not in st.session_state:
 
 # Sidebar Theme Switcher & Data Source
 with st.sidebar:
-    st.markdown("### 🎨 Theme Configuration")
+    st.markdown("### Theme Configuration")
     theme_choice = st.radio(
         "Background Theme",
         ["Example A (Dark Blue)", "Example B (Dark Wine)"],
@@ -366,8 +366,8 @@ with st.sidebar:
     st.session_state.theme = theme_choice
 
     st.markdown("---")
-    st.markdown("### ⚙️ SOC Data Source")
-    use_sample = st.checkbox("🧪 Use Sample Phishing EML", value=False)
+    st.markdown("### SOC Data Source")
+    use_sample = st.checkbox(" Use Sample Phishing EML", value=False)
     uploaded_file = st.file_uploader("Upload .eml File", type=["eml"])
 
     st.markdown("---")
@@ -512,7 +512,7 @@ if raw_bytes is None:
     with landing_col2:
         st.markdown("""
         <div class='soc-card' style='text-align: center; padding: 40px;'>
-            <div style='font-size: 3rem; margin-bottom: 10px;'>🛡️</div>
+            <div style='font-size: 3rem; margin-bottom: 10px;'></div>
             <div style='font-size: 2rem; font-weight: 800; color: #f8fafc; letter-spacing: -0.5px;'>PRAMAAN Threat Intelligence</div>
             <div style='font-size: 1rem; color: #7dd3fc; margin-bottom: 24px;'>AI-Powered Digital Forensics & Phishing Incident Response Engine</div>
             <div style='font-size: 0.9rem; color: #94a3b8; margin-bottom: 30px;'>
@@ -528,7 +528,7 @@ if raw_bytes is None:
             st.rerun()
 
         st.markdown("<div style='text-align: center; margin-top: 15px;'>", unsafe_allow_html=True)
-        if st.checkbox("🧪 Use Sample Phishing EML (gmail.eml)", key="landing_sample"):
+        if st.checkbox(" Use Sample Phishing EML (gmail.eml)", key="landing_sample"):
             sample_path = Path(__file__).parent / "gmail.eml"
             if sample_path.exists():
                 raw_bytes = sample_path.read_bytes()
@@ -666,21 +666,28 @@ pdf_bytes = generate_pdf_report(
     relay_hops=hop_rows,
 )
 
-# # --- TOP MAIN HEADER ---
+# --- TOP MAIN HEADER ---
 top_col1, top_col2 = st.columns([3, 2])
 
 with top_col1:
     analyst_badge = ""
     if xai_result.get("requires_analyst_review"):
         analyst_badge = """
-        <span style="background-color: rgba(239, 68, 68, 0.18); border: 1.5px solid #ef4444; color: #ef4444; padding: 4px 12px; border-radius: 6px; font-weight: 800; font-size: 0.85rem; font-family: 'JetBrains Mono', monospace; margin-left: 12px; display: inline-block; vertical-align: middle;">
+        <span style="background-color: rgba(239, 68, 68, 0.18);
+                     border: 1.5px solid #ef4444; color: #ef4444;
+                     padding: 4px 12px; border-radius: 6px;
+                     font-weight: 800; font-size: 0.85rem;
+                     font-family: 'JetBrains Mono', monospace;
+                     margin-left: 12px; display: inline-block;
+                     vertical-align: middle;">
             ANALYST REVIEW REQUIRED
         </span>
         """
     st.markdown(f"""
     <div style="margin-top: -15px; margin-bottom: 8px;">
         <span style="font-size: 1.4rem; font-weight: 800; color: #f8fafc;">Target Artifact:</span>
-        <code style="font-size: 1.2rem; color: #7dd3fc; background-color: #1e293b; padding: 4px 10px; border-radius: 6px;">{file_name}</code>
+        <code style="font-size: 1.2rem; color: #7dd3fc; background-color: #1e293b;
+                     padding: 4px 10px; border-radius: 6px;">{file_name}</code>
         {analyst_badge}
     </div>
     """, unsafe_allow_html=True)
@@ -697,7 +704,7 @@ with top_col2:
             data=pdf_bytes,
             file_name=f"PRAMAAN_Report_{file_name}.pdf",
             mime="application/pdf",
-            use_container_width=True
+            width='stretch'
         )
 
 st.markdown("<div style='margin-bottom: 12px;'></div>", unsafe_allow_html=True)
@@ -705,7 +712,7 @@ st.markdown("<div style='margin-bottom: 12px;'></div>", unsafe_allow_html=True)
 # Helper function for legal disclaimer footer
 def render_legal_disclaimer():
     st.markdown("<div style='margin-top: 30px;'></div>", unsafe_allow_html=True)
-    with st.expander("⚖️ Legal & Forensic Disclaimer", expanded=False):
+    with st.expander(" Legal & Forensic Disclaimer", expanded=False):
         st.caption(
             "This software is designed exclusively for educational, cybersecurity analysis, and digital forensics purposes. "
             "The calculated risk score and extracted threat artifacts are derived from automated regex heuristics, IP geolocation, ML models, and cryptographic hashes. "
@@ -737,14 +744,14 @@ with tab1:
                     border: 2px solid #ef4444; border-radius: 8px; padding: 16px 20px; margin-bottom: 20px;">
             <div style="display: flex; align-items: center; justify-content: space-between;">
                 <div style="display: flex; align-items: center; gap: 14px;">
-                    <span style="font-size: 2.2rem;">🚨</span>
+                    <span style="font-size: 2.2rem;"></span>
                     <div>
                         <h3 style="color: #ef4444; margin: 0; font-size: 1.25rem; font-weight: 800;">CRITICAL XAI CONTRADICTION DETECTED</h3>
                         <p style="color: #fca5a5; margin: 4px 0 0 0; font-size: 0.95rem;">{alert_desc}</p>
                     </div>
                 </div>
                 <span style="background-color: #ef4444; color: #ffffff; padding: 6px 14px; border-radius: 9999px; font-weight: 800; font-size: 0.85rem; letter-spacing: 0.05em;">
-                    ⚠️ ANALYST REVIEW REQUIRED
+                     ANALYST REVIEW REQUIRED
                 </span>
             </div>
         </div>
@@ -757,14 +764,14 @@ with tab1:
                     border: 2px solid #f97316; border-radius: 8px; padding: 16px 20px; margin-bottom: 20px;">
             <div style="display: flex; align-items: center; justify-content: space-between;">
                 <div style="display: flex; align-items: center; gap: 14px;">
-                    <span style="font-size: 2.2rem;">⚠️</span>
+                    <span style="font-size: 2.2rem;"></span>
                     <div>
                         <h3 style="color: #f97316; margin: 0; font-size: 1.25rem; font-weight: 800;">HIGH XAI CONTRADICTION — POTENTIAL FALSE POSITIVE</h3>
                         <p style="color: #fdba74; margin: 4px 0 0 0; font-size: 0.95rem;">{alert_desc}</p>
                     </div>
                 </div>
                 <span style="background-color: #f97316; color: #ffffff; padding: 6px 14px; border-radius: 9999px; font-weight: 800; font-size: 0.85rem; letter-spacing: 0.05em;">
-                    ⚠️ ANALYST REVIEW REQUIRED
+                     ANALYST REVIEW REQUIRED
                 </span>
             </div>
         </div>
@@ -776,7 +783,7 @@ with tab1:
         <div style="background: linear-gradient(135deg, rgba(234, 179, 8, 0.2) 0%, rgba(161, 98, 7, 0.25) 100%);
                     border: 2px solid #eab308; border-radius: 8px; padding: 14px 18px; margin-bottom: 20px;">
             <div style="display: flex; align-items: center; gap: 14px;">
-                <span style="font-size: 2rem;">⚡</span>
+                <span style="font-size: 2rem;"></span>
                 <div>
                     <h3 style="color: #eab308; margin: 0; font-size: 1.15rem; font-weight: 800;">AMBER XAI CONTRADICTION — MODEL AMBIGUITY</h3>
                     <p style="color: #fef08a; margin: 4px 0 0 0; font-size: 0.95rem;">{alert_desc}</p>
@@ -811,12 +818,12 @@ with tab1:
     ov_c1, ov_c2 = st.columns(2)
 
     with ov_c1:
-        st.markdown("#### 🔍 Executive Incident Verdict")
+        st.markdown("#### Executive Incident Verdict")
         st.markdown(f"**ML Phishing Probability**: `<font color='#7dd3fc'><b>{ml_prob * 100:.1f}%</b></font>`", unsafe_allow_html=True)
         st.markdown(f"**Target EML Hash**: `<code class='mono-font'>{sha256_hash}</code>`", unsafe_allow_html=True)
-        st.button("📋 Copy Hash", key="copy_hash_t1", on_click=lambda: st.write("Copied!"))
+        st.button(" Copy Hash", key="copy_hash_t1", on_click=lambda: st.write("Copied!"))
 
-        st.markdown("##### 📌 Key Threat Findings")
+        st.markdown("##### Key Threat Findings")
         if risk_factors:
             for factor in risk_factors:
                 st.markdown(f"• **{factor['category']}** (+{factor['points']} pts): {factor['description']}")
@@ -825,7 +832,7 @@ with tab1:
 
         # Header Injection Alert Cards (HIGH severity)
         if header_forensics.get("header_injection_anomalies"):
-            st.markdown("##### 🚨 Header Injection Anomalies")
+            st.markdown("##### Header Injection Anomalies")
             for _a in header_forensics["header_injection_anomalies"]:
                 st.error(
                     "**HIGH** — Header injection: `" + _a["header"] + "` appears "
@@ -834,7 +841,7 @@ with tab1:
                 )
 
     with ov_c2:
-        st.markdown("#### 📊 Threat Factor Weight Breakdown")
+        st.markdown("#### Threat Factor Weight Breakdown")
         if risk_factors:
             df_f = pd.DataFrame(risk_factors)
             chart = alt.Chart(df_f).mark_bar().encode(
@@ -849,7 +856,7 @@ with tab1:
 
     # SHAP Waterfall Chart Sub-Section
     st.markdown("---")
-    st.markdown("#### 🔬 Explainable AI (XAI) — SHAP Model Attributions")
+    st.markdown("#### Explainable AI (XAI) — SHAP Model Attributions")
     st.caption("Local feature attributions calculated using SHAP (Shapley Additive exPlanations) for tokens shifting the Logistic Regression prediction.")
 
     w_data = xai_explanation.get("waterfall_data", {})
@@ -890,7 +897,7 @@ with tab1:
 
         xai_c1, xai_c2 = st.columns(2)
         with xai_c1:
-            st.markdown("##### 🚨 Top Phishing Signals (Positive Impact)")
+            st.markdown("##### Top Phishing Signals (Positive Impact)")
             pos_f = xai_explanation.get("top_positive_features", [])
             if pos_f:
                 st.dataframe(pd.DataFrame(pos_f).rename(columns={"feature": "Token Feature", "attribution": "SHAP Weight"}), width='stretch', hide_index=True)
@@ -898,7 +905,7 @@ with tab1:
                 st.caption("No significant phishing tokens detected.")
 
         with xai_c2:
-            st.markdown("##### 🛡️ Top Legitimate Signals (Negative Impact)")
+            st.markdown("##### Top Legitimate Signals (Negative Impact)")
             neg_f = xai_explanation.get("top_negative_features", [])
             if neg_f:
                 st.dataframe(pd.DataFrame(neg_f).rename(columns={"feature": "Token Feature", "attribution": "SHAP Weight"}), width='stretch', hide_index=True)
@@ -915,7 +922,7 @@ with tab1:
 # ==========================================
 with tab2:
     st.markdown("<div class='soc-card'>", unsafe_allow_html=True)
-    st.markdown("### 🛡️ Authentication Protocols & Domain Alignment Matrix")
+    st.markdown("### Authentication Protocols & Domain Alignment Matrix")
     
     a1, a2, a3, a4 = st.columns(4)
     with a1:
@@ -942,7 +949,7 @@ with tab2:
     # Header Injection Alert Cards (Tab 2)
     if header_forensics.get("header_injection_anomalies"):
         st.markdown("---")
-        st.markdown("#### 🚨 Header Injection Anomalies")
+        st.markdown("#### Header Injection Anomalies")
         for _a in header_forensics["header_injection_anomalies"]:
             st.error(
                 "**HIGH** — Header injection: `" + _a["header"] + "` appears "
@@ -951,7 +958,7 @@ with tab2:
             )
 
     st.markdown("---")
-    st.markdown("#### 🌐 Domain Alignment Matrix")
+    st.markdown("#### Domain Alignment Matrix")
     
     from_addr = str(msg.get("From", ""))
     ret_addr = str(msg.get("Return-Path", ""))
@@ -967,18 +974,18 @@ with tab2:
     st.dataframe(matrix_df, width='stretch', hide_index=True)
 
     st.markdown("---")
-    st.markdown("#### 🔒 Zero-Knowledge Forensic Verification (ZKFV) Proof")
+    st.markdown("#### Zero-Knowledge Forensic Verification (ZKFV) Proof")
     st.code(merkle_root, language="text")
-    st.button("📋 Copy Merkle Root", key="copy_merkle_t2", on_click=lambda: st.write("Copied!"))
+    st.button(" Copy Merkle Root", key="copy_merkle_t2", on_click=lambda: st.write("Copied!"))
 
-    if st.button("🛡️ Verify Cryptographic Proof", width='stretch'):
+    if st.button(" Verify Cryptographic Proof", width='stretch'):
         is_valid, curr_root, exp_root = zkfv.verify_evidence_proof(raw_bytes, zkfv_proof)
         if is_valid:
-            st.success("✅ **Evidence Integrity Verified**: Merkle root matches cryptographic proof!")
+            st.success(" **Evidence Integrity Verified**: Merkle root matches cryptographic proof!")
         else:
-            st.error("❌ **Verification Failed**: Proof mismatch!")
+            st.error(" **Verification Failed**: Proof mismatch!")
 
-    with st.expander("📜 View Forensic Audit Ledger", expanded=False):
+    with st.expander(" View Forensic Audit Ledger", expanded=False):
         audit_logs = zkfv.get_recent_audit_logs(10)
         if audit_logs:
             st.dataframe(pd.DataFrame(audit_logs), width='stretch', hide_index=True)
@@ -994,7 +1001,7 @@ with tab2:
 # ==========================================
 with tab3:
     st.markdown("<div class='soc-card'>", unsafe_allow_html=True)
-    st.markdown("### 🔗 Extracted URLs & Defanged Threat Analysis")
+    st.markdown("### Extracted URLs & Defanged Threat Analysis")
 
     if urls:
         url_analysis = threat_intel.analyze_url_structure(urls)
@@ -1015,7 +1022,7 @@ with tab3:
         st.info("No URLs extracted from email body.")
 
     st.markdown("---")
-    st.markdown("#### 📊 Stacked Factor Contribution Chart")
+    st.markdown("#### Stacked Factor Contribution Chart")
     if risk_factors:
         df_factors = pd.DataFrame(risk_factors)
         chart = alt.Chart(df_factors).mark_bar().encode(
@@ -1029,7 +1036,7 @@ with tab3:
         st.success("Zero threat score penalties detected.")
 
     st.markdown("---")
-    st.markdown("#### 📋 Extracted MIME Headers")
+    st.markdown("#### Extracted MIME Headers")
     for k, v in headers_dict.items():
         st.markdown(f"**{k}**: `<code class='mono-font'>{v}</code>`", unsafe_allow_html=True)
 
@@ -1042,7 +1049,7 @@ with tab3:
 # ==========================================
 with tab4:
     st.markdown("<div class='soc-card'>", unsafe_allow_html=True)
-    st.markdown("### 🛤️ Received Chain Timeline & Relay Hop Analysis")
+    st.markdown("### Received Chain Timeline & Relay Hop Analysis")
 
     # Received Hops Timeline
     received_headers = msg.get_all("Received", [])
@@ -1070,7 +1077,7 @@ with tab4:
         st.caption("No 'Received:' headers found in MIME data.")
 
     st.markdown("---")
-    st.markdown("#### 🛠️ Threat Infrastructure Relationship Graph")
+    st.markdown("#### Threat Infrastructure Relationship Graph")
     
     graph_data = graph_engine.build_threat_infrastructure_graph(from_addr, ret_addr, urls, geo_results)
     plotly_fig = graph_engine.generate_plotly_threat_graph(graph_data)
@@ -1086,7 +1093,7 @@ with tab4:
 # ==========================================
 with tab5:
     st.markdown("<div class='soc-card'>", unsafe_allow_html=True)
-    st.markdown("### 🗺️ Dynamic Geolocation Map & Campaign Intelligence")
+    st.markdown("### Dynamic Geolocation Map & Campaign Intelligence")
 
     # Map with DYNAMIC pins
     map_data = []
@@ -1110,7 +1117,7 @@ with tab5:
         st.map(fallback_df, latitude="lat", longitude="lon", zoom=2)
 
     st.markdown("---")
-    st.markdown("#### 📡 Extracted IP & ASN Resolution Table")
+    st.markdown("#### Extracted IP & ASN Resolution Table")
     if geo_results:
         geo_rows = []
         for g in geo_results:
@@ -1127,12 +1134,12 @@ with tab5:
 
         for g in geo_results:
             ip_val = g.get("ip", "")
-            st.button(f"📋 Copy IP {ip_val}", key=f"copy_ip_{ip_val}", on_click=lambda: st.write("Copied!"))
+            st.button(f" Copy IP {ip_val}", key=f"copy_ip_{ip_val}", on_click=lambda: st.write("Copied!"))
     else:
         st.caption("No IP addresses extracted.")
 
     st.markdown("---")
-    st.markdown("#### 🕸️ Neo4j Campaign Correlation Graph")
+    st.markdown("#### Neo4j Campaign Correlation Graph")
     
     neo_status = neo4j_engine.test_connection()
     st.markdown(f"**Neo4j Database Status**: `<span class='badge-info'>{neo_status['status']}</span>`", unsafe_allow_html=True)
