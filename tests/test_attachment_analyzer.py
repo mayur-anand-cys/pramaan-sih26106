@@ -112,12 +112,9 @@ def test_pdf_with_javascript():
     """A PDF with JavaScript should be flagged."""
     data = _make_dummy_pdf_with_js()
     r = analyze_attachment("invoice.pdf", data)
-    if r["has_javascript"]:
-        assert r["risk_score"] >= RISK_POINTS["pdf_javascript"]
-        print(f"   [OK] PDF with JS -> risk={r['risk_score']}")
-    else:
-        # pypdf may fail to parse minimal PDFs — this is informational
-        print(f"   [INFO] PDF JS detection returned False (minimal PDF may not parse). Details: {r['details'].get('pdf_analysis', {}).get('error')}")
+    if not r["has_javascript"]:
+        pytest.skip(f"Minimal PDF not parsed by pypdf: {r['details'].get('pdf_analysis', {}).get('error')}")
+    assert r["risk_score"] >= RISK_POINTS["pdf_javascript"]
 
 
 def test_batch_analysis():
