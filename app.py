@@ -1153,16 +1153,16 @@ with tab5:
     badge_color = neo_status.get("status_color", "amber")
     badge_label = neo_status.get("status", "Unknown")
     color_map = {
-        "green": ("#16a34a", "🟢"),
-        "amber": ("#f59e0b", "🟡"),
-        "red":   ("#dc2626", "🔴"),
+        "green": "#16a34a",
+        "amber": "#f59e0b",
+        "red":   "#dc2626",
     }
-    hex_color, emoji = color_map.get(badge_color, color_map["amber"])
+    hex_color = color_map.get(badge_color, color_map["amber"])
 
     st.markdown(
         f"**Neo4j Database Status**: "
         f"<span style='background:{hex_color}; color:white; padding:2px 8px; "
-        f"border-radius:4px; font-weight:600;'>{emoji} {badge_label}</span>",
+        f"border-radius:4px; font-weight:600;'>{badge_label}</span>",
         unsafe_allow_html=True,
     )
 
