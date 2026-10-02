@@ -1,5 +1,5 @@
 """
-Tests for Attachment Analyzer (Issue XX).
+Tests for Attachment Analyzer (#48).
 Run: python tests/test_attachment_analyzer.py
 """
 import io

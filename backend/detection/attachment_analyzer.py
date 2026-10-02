@@ -1,5 +1,5 @@
 """
-Attachment Analyzer for PRAMAAN (Issue XX).
+Attachment Analyzer for PRAMAAN (#48).
 
 Static analysis of email attachments — never executes code, only inspects
 structure and metadata to detect malicious patterns.
