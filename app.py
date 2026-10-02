@@ -1,4 +1,5 @@
 import streamlit as st
+import os
 import datetime
 import email
 from email import policy
@@ -49,7 +50,11 @@ _user = get_current_user()
 _role = _user["role"] if _user else "analyst"
 
 # --- Auto-seed demo campaign for Tab 5 (once per session) ---
-if _user and "demo_seeded" not in st.session_state:
+if (
+    _user
+    and os.getenv("PRAMAAN_DEMO_MODE", "false").lower() == "true"
+    and "demo_seeded" not in st.session_state
+):
     try:
         from neo4j_engine import seed_demo_data
         seed_demo_data()
