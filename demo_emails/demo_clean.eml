@@ -6,7 +6,7 @@ Message-ID: <20241014102315.12345@techcorp-in.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="UTF-8"
 Return-Path: <priya.sharma@techcorp-in.com>
-Received: from mail.techcorp-in.com (mail.techcorp-in.com [203.0.113.42])
+Received: from mail.techcorp-in.com (mail.techcorp-in.com [8.8.8.8])
     by mx.google.com with ESMTPS id x1234abc
     for <rahul.verma@techcorp-in.com>
     (version=TLS1.3 cipher=TLS_AES_256_GCM_SHA384);

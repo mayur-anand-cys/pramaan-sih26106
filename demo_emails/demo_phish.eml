@@ -6,12 +6,12 @@ Message-ID: <20241015024703.67890@paypa1-verify.com>
 MIME-Version: 1.0
 Content-Type: text/html; charset="UTF-8"
 Return-Path: <noreply@paypa1-verify.com>
-Received: from unknown (unknown [198.51.100.77])
+Received: from unknown (unknown [1.1.1.1])
     by mx.example.com with SMTP id phish001
     for <victim@example.com>;
     Tue, 15 Oct 2024 02:47:04 +0000
 Authentication-Results: mx.example.com;
-    spf=fail (sender IP is 198.51.100.77) smtp.mailfrom=paypa1-verify.com;
+    spf=fail (sender IP is 1.1.1.1) smtp.mailfrom=paypa1-verify.com;
     dkim=none;
     dmarc=fail (p=REJECT sp=REJECT) header.from=paypa1-verify.com
 
