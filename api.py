@@ -22,6 +22,7 @@ from backend.detection.auth_check import verify_email_auth
 
 # Thread hijacking detection (Issue #22)
 from backend.detection.thread_hijack import detect_thread_hijacking
+from backend.detection.attachment_analyzer import analyze_attachments
 from backend.detection.xai import (
     detect_contradictions,
     explain_prediction,
@@ -94,6 +95,12 @@ async def analyze_eml_file(file: UploadFile = File(...)):
     # Thread hijacking detection (Issue #22)
     thread_hijack_result = detect_thread_hijacking(msg)
     thread_hijack_modifier = thread_hijack_result.get("risk_modifier", 0)
+
+    # Attachment analysis (Issue #48)
+    attachments = extract_attachments_from_msg(msg)
+    attachment_report = analyze_attachments(attachments)
+    attachment_modifier = attachment_report.get("total_risk_modifier", 0)
+
 
     subject_text = str(msg.get("Subject", ""))
     from_header = str(msg.get("From", ""))
@@ -173,6 +180,18 @@ async def analyze_eml_file(file: UploadFile = File(...)):
             "detail": (
                 f"Detected {len(thread_hijack_result['anomalies'])} "
                 f"thread hijacking anomalies"
+            ),
+        })
+
+    # 7b. Attachment risk modifier (Issue #48)
+    if attachment_modifier > 0:
+        risk_score = min(100, risk_score + attachment_modifier)
+        risk_factors.append({
+            "factor": "attachment_analysis",
+            "points": attachment_modifier,
+            "detail": (
+                f"{attachment_report.get('flagged_count', 0)} suspicious "
+                f"attachment(s) of {attachment_report.get('attachment_count', 0)}"
             ),
         })
 
@@ -257,7 +276,8 @@ async def analyze_eml_file(file: UploadFile = File(...)):
         },
         "neo4j_ingestion": neo4j_res,
         "zkfv_proof": zkfv_proof,
-        "thread_hijacking": thread_hijack_result
+        "thread_hijacking": thread_hijack_result,
+        "attachment_analysis": attachment_report
     }
 
 
@@ -378,6 +398,22 @@ def extract_body_from_msg(msg: email.message.EmailMessage) -> str:
         except Exception:
             body = str(msg.get_payload() or "")
     return body
+
+
+def extract_attachments_from_msg(msg: email.message.EmailMessage) -> List[Dict[str, Any]]:
+    """Walk MIME parts, return list of {filename, data} for attachments."""
+    attachments = []
+    if msg.is_multipart():
+        for part in msg.walk():
+            disp = (part.get_content_disposition() or "").lower()
+            if disp == "attachment":
+                fname = part.get_filename() or "unnamed"
+                try:
+                    payload = part.get_payload(decode=True) or b""
+                except Exception:
+                    payload = b""
+                attachments.append({"filename": fname, "data": payload})
+    return attachments
 
 def extract_urls(text: str) -> List[str]:
     import re
