@@ -333,8 +333,8 @@ pramaan-sih26106/
 
 | Role | Name | GitHub |
 |------|------|--------|
-| Team Lead | Mayur Anand | [@mayur-anand-cys](https://github.com/mayur-anand-cys) |
-| Member | Sudarshan Iyengar | [@sudarshaniyengar324-cloud](https://github.com/sudarshaniyengar324-cloud) |
+| Team Lead | Sudarshan Iyengar | [@sudarshaniyengar324-cloud](https://github.com/sudarshaniyengar324-cloud) |
+| Tech Lead | Mayur Anand | [@mayur-anand-cys](https://github.com/mayur-anand-cys) |
 | Member | Shreya Garje | [@shreyagarje07-star](https://github.com/shreyagarje07-star) |
 | Member | Keerthana C | [@keerthanac0905](https://github.com/keerthanac0905) |
 | Member | Sneha Namratha | [@snehanamratha](https://github.com/snehanamratha) |
@@ -345,11 +345,60 @@ pramaan-sih26106/
 
 ---
 
-## 📜 Compliance
+## Compliance
 
-- **DPDP Act 2023** — PII masking in all exported reports (`backend/reporting/pii_mask.py`)
-- **Cryptographic chain of custody** — SHA-256 sealing on upload, Merkle root anchored to Sepolia
-- **Section 63 BSA 2023** — Court-ready PDF with examiner attestations _(roadmap)_
+PRAMAAN is designed for deployment within Indian government and law enforcement contexts. Each module maps to a specific legal or regulatory obligation.
+
+### DPDP Act 2023 — Digital Personal Data Protection
+
+**Module:** `backend/reporting/pii_mask.py`
+
+- **Data Minimization (Section 6):** PII is masked in all exported reports — email local parts, phone numbers, Aadhaar, and PAN are redacted before they leave the platform.
+- **Storage Limitation (Section 8(7)):** Configurable retention windows on raw `.eml` evidence. Default: 90 days.
+- **Purpose Limitation:** Analysis is scoped to threat investigation only; no secondary use of email content.
+- **Breach Notification (Section 8(6)):** Alerting hook prepared for Data Protection Board reporting.
+- **DPDP Rules 2025 (notified 14 Nov 2025):** 18-month phased compliance timeline tracked in `docs/DEPLOYMENT_PLAN.md`.
+
+### CERT-In Directions 2022 — Incident Reporting
+
+**Module:** `backend/intel/`, `scripts/`
+
+- **6-Hour Reporting:** Webhook pipeline prepared to push indicators to CERT-In within the mandated 6-hour window (`docs/DEPLOYMENT_PLAN.md`, Month 5).
+- **Log Retention (180 Days):** All analysis events stored in `zkfv_ledger.db` with timestamps. Configurable retention extends to 180+ days.
+- **NTP Synchronization:** On-chain timestamps sourced from block time on Sepolia; local audit timestamps align to NPL via system NTP.
+- **Point of Contact:** Designated in `SECURITY.md` — reported via the private vulnerability reporting channel.
+
+### Bharatiya Sakshya Adhiniyam 2023 — Electronic Evidence
+
+**Module:** `zkfv.py`, `blockchain/anchor.py`, `report_gen.py`
+
+- **Section 63(4) — Certificate:** Every forensic PDF includes a chain-of-custody manifest with SHA-256 hash, Merkle root, and analyst attestation. Structured to accept a Section 63(4) certificate in future releases.
+- **Hash Integrity:** Raw `.eml` bytes are hashed at ingestion. Any modification changes the Merkle root and invalidates the on-chain anchor.
+- **Admissibility:** Metadata-only evidence design — no raw email content on-chain, preserving both privacy and evidentiary integrity.
+
+### IT Act 2000 (as amended 2023)
+
+**Module:** `security_hardening.py`, `backend/auth/`
+
+- **Section 43:** Defenses against unauthorized access — PBKDF2 password hashing, session isolation, rate limiting.
+- **Section 66:** Anomaly detection surfaces compromised credentials and account takeover indicators.
+- **Section 69:** API endpoints prepared for lawful interception hooks (roadmap; gated behind ministerial authorization).
+
+### Additional Alignments
+
+| Framework | Alignment |
+|---|---|
+| NIST Cybersecurity Framework 2.0 | Detection (DE), Analysis (AN) categories mapped to pipeline stages |
+| ISO/IEC 27037:2012 | Digital evidence handling — identification, collection, acquisition, preservation |
+| RFC 5322 / 5321 | MIME and SMTP parsing compliance |
+| DKIM / SPF / DMARC (RFC 6376, 7208, 7489) | Full authentication chain validation |
+
+### Roadmap Compliance Items
+
+- Section 63(4) certificate generator (Month 2, post-SIH)
+- CERT-In empanelment for audit readiness (Month 3)
+- DPDP Rules 2025 — full SDF (Significant Data Fiduciary) readiness (Month 6)
+
 
 ---
 
