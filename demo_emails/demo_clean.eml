@@ -1,0 +1,36 @@
+From: "Priya Sharma" <priya.sharma@techcorp-in.com>
+To: "Rahul Verma" <rahul.verma@techcorp-in.com>
+Subject: Q4 Project Kickoff - Wednesday 3PM
+Date: Mon, 14 Oct 2024 10:23:15 +0530
+Message-ID: <20241014102315.12345@techcorp-in.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="UTF-8"
+Return-Path: <priya.sharma@techcorp-in.com>
+Received: from mail.techcorp-in.com (mail.techcorp-in.com [8.8.8.8])
+    by mx.google.com with ESMTPS id x1234abc
+    for <rahul.verma@techcorp-in.com>
+    (version=TLS1.3 cipher=TLS_AES_256_GCM_SHA384);
+    Mon, 14 Oct 2024 10:23:16 +0530
+Authentication-Results: mx.google.com;
+    spf=pass smtp.mailfrom=techcorp-in.com;
+    dkim=pass header.i=@techcorp-in.com;
+    dmarc=pass (p=NONE sp=NONE) header.from=techcorp-in.com
+
+Hi Rahul,
+
+Just a reminder about the Q4 Project Kickoff meeting on Wednesday at 3PM in Conference Room B.
+
+Agenda:
+1. Project scope review
+2. Team assignments
+3. Timeline and milestones
+4. Q&A
+
+Please come prepared with your team's status updates.
+
+Best regards,
+Priya Sharma
+Senior Project Manager
+TechCorp India Pvt Ltd
+priya.sharma@techcorp-in.com
++91-80-1234-5678
