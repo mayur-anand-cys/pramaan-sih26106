@@ -364,19 +364,16 @@ with st.sidebar:
         auth_logout()
         st.rerun()
 
-# Role-based CSS theming (post-login)
-if _role == "admin":
-    bg_gradient = "linear-gradient(135deg, #0f1419 0%, #1a2332 100%)"
-    card_bg = "#121926"
-    card_border = "#1e293b"
-elif _role == "analyst":
-    bg_gradient = "linear-gradient(135deg, #1a0f14 0%, #2a1820 100%)"
-    card_bg = "#22131b"
-    card_border = "#3a202d"
+# Role-based theming — solid colors per SOC design system (#102)
+# No gradients, no shadows. Color = meaning only.
+if _role == "analyst":
+    bg_gradient = "#0a0e14"
+    card_bg = "#0d1117"
+    card_border = "#30363d"
 else:
-    bg_gradient = "linear-gradient(135deg, #0f1419 0%, #1a2332 100%)"
-    card_bg = "#121926"
-    card_border = "#1e293b"
+    bg_gradient = "#0a0e14"
+    card_bg = "#0d1117"
+    card_border = "#30363d"
 
 st.markdown(f"""
     <style>
@@ -443,14 +440,8 @@ st.markdown(f"""
         font-family: 'JetBrains Mono', monospace;
     }}
 
-    .stAppDeployButton button, [data-testid="stAppDeployButton"] button {{
-        background: linear-gradient(135deg, #ff1744 0%, #d50000 100%) !important;
-        color: #ffffff !important;
-        border: 1px solid #ff5252 !important;
-        border-radius: 6px !important;
-        font-weight: 700 !important;
-        padding: 6px 18px !important;
-        box-shadow: 0 0 15px rgba(255, 23, 68, 0.8) !important;
+    .stAppDeployButton, [data-testid="stAppDeployButton"] {{
+        display: none !important;
     }}
 
     /* Streamlit Tabs Styling */
