@@ -1,0 +1,11 @@
+# All files require Mayur's review.
+# No PR can be merged without his approval.
+
+*       @mayur-anand-cys
+
+# Lock the critical backend modules even harder (belt and suspenders)
+/api.py                     @mayur-anand-cys
+/zkfv.py                    @mayur-anand-cys
+/backend/auth/              @mayur-anand-cys
+/blockchain/                @mayur-anand-cys
+/.github/                   @mayur-anand-cys
