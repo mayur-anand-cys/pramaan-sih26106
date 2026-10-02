@@ -25,6 +25,7 @@ from backend.detection.thread_hijack import detect_thread_hijacking
 
 # Attachment analysis (static, no execution)
 from backend.detection.attachment_analyzer import analyze_attachments
+from backend.intel.dmarc_parser import parse_dmarc_report, summarize_dmarc
 from backend.detection.xai import (
     detect_contradictions,
     explain_prediction,
@@ -547,3 +548,37 @@ async def enrich_indicator(indicator: str = Query(..., description="IP, domain, 
 def intel_cache_stats():
     """Return cache performance stats."""
     return get_cache_stats()
+
+
+# ═══════════════════════════════════════════════════════════════
+# DMARC Aggregate Report Parser (Issue #49)
+# ═══════════════════════════════════════════════════════════════
+
+@app.post("/api/v1/dmarc/parse")
+async def parse_dmarc_endpoint(file: UploadFile = File(...)):
+    """
+    Parse a DMARC aggregate report (ZIP, GZIP, or raw XML).
+
+    Returns per-source-IP send records plus a summary. Records where
+    BOTH SPF and DKIM failed are marked with ``both_fail: true``.
+    """
+    raw = await file.read()
+    if not raw:
+        raise HTTPException(status_code=400, detail="Uploaded file is empty.")
+
+    try:
+        records = parse_dmarc_report(raw)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"DMARC parse error: {e}")
+
+    if not records:
+        raise HTTPException(
+            status_code=400,
+            detail="No DMARC records found. Expected an XML or ZIP from a DMARC aggregate report.",
+        )
+
+    summary = summarize_dmarc(records)
+    return {
+        **summary,
+        "records": records,
+    }

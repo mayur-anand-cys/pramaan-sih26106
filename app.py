@@ -41,6 +41,7 @@ st.set_page_config(
 # --- Authentication gate ---
 from backend.auth.login_ui import render_login_page
 from backend.auth.authenticator import get_current_user, logout as auth_logout
+from backend.intel.dmarc_parser import parse_dmarc_report, summarize_dmarc
 
 if not render_login_page():
     st.stop()
@@ -690,12 +691,13 @@ def render_legal_disclaimer():
 
 
 # --- 5 HORIZONTAL TABS ---
-tab1, tab2, tab3, tab4, tab5 = st.tabs([
+tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
     "Tab 1: Triage Overview",
     "Tab 2: Authentication",
     "Tab 3: Content & URL",
     "Tab 4: Relay & Route",
-    "Tab 5: IP & Domain Intel"
+    "Tab 5: IP & Domain Intel",
+    "Tab 6: DMARC Reports"
 ])
 
 # ==========================================
@@ -1115,6 +1117,92 @@ with tab5:
         st.dataframe(pd.DataFrame(campaigns), width='stretch', hide_index=True)
     else:
         st.caption("No multi-email campaign correlations detected.")
+
+    st.markdown("</div>", unsafe_allow_html=True)
+
+
+# ==========================================
+# TAB 6: DMARC REPORTS
+# ==========================================
+with tab6:
+    st.markdown("<div class='soc-card'>", unsafe_allow_html=True)
+    st.markdown("### DMARC Aggregate Report Analysis")
+    st.caption(
+        "Upload a DMARC aggregate report (ZIP, GZIP, or raw XML from your mail provider). "
+        "Records where **both SPF and DKIM fail** are flagged as BEC / spoofing candidates."
+    )
+
+    _dmarc_file = st.file_uploader(
+        "Upload DMARC report",
+        type=["zip", "xml", "gz"],
+        key="dmarc_uploader",
+    )
+
+    if _dmarc_file is not None:
+        try:
+            _dmarc_bytes = _dmarc_file.read()
+            _records = parse_dmarc_report(_dmarc_bytes)
+            _summary = summarize_dmarc(_records)
+
+            if not _records:
+                st.warning("No DMARC records found. Expected an XML or ZIP from a DMARC aggregate report.")
+            else:
+                _c1, _c2, _c3, _c4 = st.columns(4)
+                with _c1:
+                    st.metric("Records", _summary["record_count"])
+                with _c2:
+                    st.metric("Total messages", _summary["total_messages"])
+                with _c3:
+                    st.metric("Both SPF+DKIM fail", _summary["both_fail_count"])
+                with _c4:
+                    st.metric("Messages from fail-IPs", _summary["both_fail_messages"])
+
+                st.markdown("---")
+                st.markdown("#### Per-Source-IP Records")
+
+                _rows = []
+                for _r in _records:
+                    _both = _r.get("both_fail", False)
+                    _rows.append({
+                        "Source IP": _r.get("source_ip", ""),
+                        "Count": _r.get("count", 0),
+                        "SPF": _r.get("spf_result", ""),
+                        "DKIM": _r.get("dkim_result", ""),
+                        "Disposition": _r.get("disposition", ""),
+                        "Header From": _r.get("header_from", ""),
+                        "BOTH FAIL": "YES" if _both else "",
+                    })
+
+                _df = pd.DataFrame(_rows)
+
+                def _highlight_both_fail(row):
+                    if row.get("BOTH FAIL") == "YES":
+                        return ["background-color: #fde2e2; color: #7f1d1d; font-weight: 600;"] * len(row)
+                    return [""] * len(row)
+
+                _styled = _df.style.apply(_highlight_both_fail, axis=1)
+                st.dataframe(_styled, width='stretch', hide_index=True)
+
+                _both_fail_records = [r for r in _records if r.get("both_fail")]
+                if _both_fail_records:
+                    st.markdown("---")
+                    st.error(
+                        f"⚠️ {len(_both_fail_records)} source IP(s) failed **both** SPF and DKIM — "
+                        "strong BEC / spoofing signal."
+                    )
+                    for _r in _both_fail_records:
+                        st.markdown(
+                            f"- **{_r.get('source_ip','')}** — "
+                            f"{_r.get('count',0)} message(s), disposition: "
+                            f"`{_r.get('disposition','')}`, header_from: "
+                            f"`{_r.get('header_from','')}`"
+                        )
+                else:
+                    st.success("No source IPs failed both SPF and DKIM.")
+        except Exception as _e:
+            st.error(f"Could not parse DMARC report: {type(_e).__name__}: {_e}")
+    else:
+        st.info("Upload a DMARC aggregate report (ZIP/XML/GZ) to analyze.")
 
     st.markdown("</div>", unsafe_allow_html=True)
 
