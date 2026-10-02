@@ -1,5 +1,11 @@
 # 🛡️ PRAMAAN
 
+![Tests](https://github.com/mayur-anand-cys/pramaan-sih26106/actions/workflows/test.yml/badge.svg)
+![License](https://img.shields.io/badge/License-MIT-yellow.svg)
+![Python](https://img.shields.io/badge/Python-3.10%2B-blue)
+![Status](https://img.shields.io/badge/Status-Active-success)
+
+
 ### AI-Powered Email Threat Detection, Geolocation & Forensic Intelligence Platform
 
 > **Detect the Threat. Trace the Infrastructure. Preserve the Evidence.**
