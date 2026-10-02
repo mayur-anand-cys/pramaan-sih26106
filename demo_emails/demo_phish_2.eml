@@ -1,0 +1,38 @@
+From: "Microsoft Account Team" <no-reply@microsoft-account-verify.com>
+To: "victim@example.com"
+Subject: Action Required: Unusual sign-in activity detected
+Date: Tue, 15 Oct 024 03:15:22 +0000
+Message-ID: <20241015031522.12345@microsoft-account-verify.com>
+MIME-Version: 1.0
+Content-Type: text/html; charset="UTF-8"
+Return-Path: <bounce@microsoft-account-verify.com>
+Received: from unknown (unknown [208.67.222.222])
+	by mx.example.com with SMTP id phish002
+	for <victim@example.com>;
+	Tue, 15 Oct 2024 03:15:23 +0000
+Authentication-Results: mx.example.com;
+	spf=fail (sender IP is 208.67.222.222) smtp.mailfrom=microsoft-account-verify.com;
+	dkim=none;
+	dmarc=fail (p=REJECT sp=REJECT) header.from=microsoft-account-verify.com
+
+<html><body>
+<p>Dear User,</p>
+
+<p><b>We detected a sign-in attempt from an unrecognized device.</b></p>
+
+<p>If this wasn't you, your account may be compromised. You have <b>12 HOURS</b> to secure it.</p>
+
+<p>Review the activity here:
+<a href="http://microsoft-account-verify.secure-login.example/phish.php">https://account.microsoft.com/security</a></p>
+
+<p>To confirm your identity, please provide:</p>
+<ul>
+<li>Email address</li>
+<li>Password</li>
+<li>Two-factor authentication code</li>
+</ul>
+
+<p><b>Failure to act will result in permanent account suspension.</b></p>
+
+<p>Microsoft Account Team</p>
+</body></html>

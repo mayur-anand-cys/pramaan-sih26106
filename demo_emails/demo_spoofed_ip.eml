@@ -1,0 +1,36 @@
+From: "PayPal Security" <security@paypal-alerts.com>
+To: "Rahul Verma" <rahul.verma@techcorp-in.com>
+Subject: URGENT: Verify your account within 24 hours
+Date: Mon, 14 Oct 2024 03:45:22 +0000
+Message-ID: <20241014034522.spoofed@paypal-alerts.com>
+MIME-Version: 1.0
+Content-Type: text/html; charset="UTF-8"
+Return-Path: <attacker@mail-01.xyz>
+Received: from mail-01.xyz (mail-01.xyz [185.220.101.42])
+    by mx.techcorp-in.com with ESMTP id spoof001
+    for <rahul.verma@techcorp-in.com>;
+    Mon, 14 Oct 2024 03:45:20 +0000
+Received: from relay-02.fake-cdn.ru (relay-02.fake-cdn.ru [45.142.212.61])
+    by mail-01.xyz with SMTP id hop002
+    for <rahul.verma@techcorp-in.com>;
+    Mon, 14 Oct 2024 03:45:18 +0000
+Received: from smtp.spoofed-hub.net (smtp.spoofed-hub.net [103.224.182.253])
+    by relay-02.fake-cdn.ru with SMTP id hop003
+    for <rahul.verma@techcorp-in.com>;
+    Mon, 14 Oct 2024 03:45:15 +0000
+Received: from localhost (unknown [104.21.55.99])
+    by smtp.spoofed-hub.net with ESMTP id hop004
+    for <rahul.verma@techcorp-in.com>;
+    Mon, 14 Oct 2024 03:45:12 +0000
+Authentication-Results: mx.techcorp-in.com;
+    spf=fail smtp.mailfrom=paypal-alerts.com;
+    dkim=fail header.i=@paypal-alerts.com;
+    dmarc=fail (p=REJECT sp=REJECT) header.from=paypal-alerts.com
+
+<html><body>
+<p>Dear Customer,</p>
+<p>We detected unusual activity on your PayPal account. <b>Your account will be suspended within 24 hours</b> unless you verify your identity immediately.</p>
+<p><a href="http://paypal-alerts.com/verify?id=8834">Click here to verify your account</a></p>
+<p>Failure to verify will result in permanent account closure.</p>
+<p>PayPal Security Team</p>
+</body></html>

@@ -22,6 +22,9 @@ from backend.detection.auth_check import verify_email_auth
 
 # Thread hijacking detection (Issue #22)
 from backend.detection.thread_hijack import detect_thread_hijacking
+
+# Attachment analysis (static, no execution)
+from backend.detection.attachment_analyzer import analyze_attachments
 from backend.detection.xai import (
     detect_contradictions,
     explain_prediction,
@@ -176,8 +179,6 @@ async def analyze_eml_file(file: UploadFile = File(...)):
             ),
         })
 
-    # 7b. XAI Contradiction Detection & SHAP Explanation
-
     # 7b. Add typosquat bonus to risk score
     if typosquat_bonus > 0 and typosquat_result is not None:
         risk_score = min(100, risk_score + typosquat_bonus)
@@ -185,6 +186,37 @@ async def analyze_eml_file(file: UploadFile = File(...)):
             "factor": "typosquat_detection",
             "points": typosquat_bonus,
             "detail": f"Lookalike domain detected: {typosquat_result.matched_brand or 'unknown brand'}"
+        })
+
+    # 7b-2. Attachment Analysis (static, no execution)
+    extracted_attachments = extract_attachments(msg)
+    attachment_analysis = analyze_attachments(extracted_attachments) if extracted_attachments else {
+        "count": 0,
+        "total_risk": 0,
+        "macro_enabled_count": 0,
+        "javascript_count": 0,
+        "double_extension_count": 0,
+        "attachments": [],
+    }
+
+    # Macro-enabled attachment bonus (+25 per macro-enabled file)
+    if attachment_analysis["macro_enabled_count"] > 0:
+        macro_bonus = 25 * attachment_analysis["macro_enabled_count"]
+        risk_score = min(100, risk_score + macro_bonus)
+        risk_factors.append({
+            "factor": "Macro-Enabled Attachment",
+            "points": macro_bonus,
+            "detail": f"{attachment_analysis['macro_enabled_count']} macro-enabled attachment(s) detected",
+        })
+
+    # PDF JavaScript bonus (+20 per PDF with JS)
+    if attachment_analysis["javascript_count"] > 0:
+        js_bonus = 20 * attachment_analysis["javascript_count"]
+        risk_score = min(100, risk_score + js_bonus)
+        risk_factors.append({
+            "factor": "PDF JavaScript",
+            "points": js_bonus,
+            "detail": f"{attachment_analysis['javascript_count']} PDF(s) contain JavaScript",
         })
 
     # 7c. XAI Contradiction Detection & SHAP Explanation
@@ -257,6 +289,7 @@ async def analyze_eml_file(file: UploadFile = File(...)):
         },
         "neo4j_ingestion": neo4j_res,
         "zkfv_proof": zkfv_proof,
+        "attachments": attachment_analysis,
         "thread_hijacking": thread_hijack_result
     }
 
@@ -358,6 +391,40 @@ def get_campaign_by_id(campaign_id: str):
     if not details.get("found"):
         raise HTTPException(status_code=404, detail=f"Campaign '{campaign_id}' not found.")
     return details
+
+def extract_attachments(msg: email.message.EmailMessage) -> List[Dict[str, Any]]:
+    """
+    Walk the MIME tree and return a list of {filename, data} dicts for
+    attachments. Skips body parts (text/plain, text/html, multipart).
+    """
+    attachments: List[Dict[str, Any]] = []
+    if not msg.is_multipart():
+        return attachments
+    for part in msg.walk():
+        ctype = part.get_content_type()
+        if ctype.startswith("multipart/"):
+            continue
+        if ctype in {"text/plain", "text/html"}:
+            continue
+        disp = str(part.get("Content-Disposition") or "").lower()
+        filename = part.get_filename()
+
+        # Skip inline images (logos embedded via cid:) unless explicitly
+        # marked as attachment
+        if "attachment" not in disp and ctype.startswith("image/"):
+            continue
+
+        if not filename and "attachment" not in disp:
+            continue
+        filename = filename or f"attachment_{len(attachments)}.bin"
+        try:
+            payload = part.get_payload(decode=True)
+            if payload:
+                attachments.append({"filename": filename, "data": payload})
+        except Exception:
+            pass
+    return attachments
+
 
 def extract_body_from_msg(msg: email.message.EmailMessage) -> str:
     body = ""
