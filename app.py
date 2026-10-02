@@ -1,4 +1,5 @@
 import streamlit as st
+import os
 import datetime
 import email
 from email import policy
@@ -48,6 +49,19 @@ if not render_login_page():
 
 _user = get_current_user()
 _role = _user["role"] if _user else "analyst"
+
+# --- Auto-seed demo campaign for Tab 5 (once per session) ---
+if (
+    _user
+    and os.getenv("PRAMAAN_DEMO_MODE", "false").lower() == "true"
+    and "demo_seeded" not in st.session_state
+):
+    try:
+        from neo4j_engine import seed_demo_data
+        seed_demo_data()
+        st.session_state["demo_seeded"] = True
+    except Exception:
+        pass
 
 # Helper for defanging URLs
 def defang_url(url: str) -> str:
@@ -1302,16 +1316,64 @@ with tab5:
 
     st.markdown("---")
     st.markdown("#### Neo4j Campaign Correlation Graph")
-    
-    neo_status = neo4j_engine.test_connection()
-    st.markdown(f"**Neo4j Database Status**: `<span class='badge-info'>{neo_status['status']}</span>`", unsafe_allow_html=True)
 
+    neo_status = neo4j_engine.test_connection()
+    mode = neo_status.get("mode", "memory")
+
+    # --- Status badge (green = live, amber = in-memory) ---
+    badge_color = neo_status.get("status_color", "amber")
+    badge_label = neo_status.get("status", "Unknown")
+    color_map = {
+        "green": "#16a34a",
+        "amber": "#f59e0b",
+        "red":   "#dc2626",
+    }
+    hex_color = color_map.get(badge_color, color_map["amber"])
+
+    st.markdown(
+        f"**Neo4j Database Status**: "
+        f"<span style='background:{hex_color}; color:white; padding:2px 8px; "
+        f"border-radius:4px; font-weight:600;'>{badge_label}</span>",
+        unsafe_allow_html=True,
+    )
+
+    # --- How to enable Neo4j expander (only when offline) ---
+    if mode != "neo4j":
+        with st.expander("How to enable Neo4j (persistent graph)", expanded=False):
+            st.markdown(
+                "Neo4j is not running. The app is currently using an "
+                "**in-memory NetworkX fallback** - campaign correlations still work, "
+                "but they are **not persisted** between restarts."
+            )
+            st.markdown("**To enable Neo4j, run:**")
+            st.code("docker-compose up -d neo4j", language="bash")
+            st.markdown(f"**Configured URI:** `{neo_status.get('uri', 'bolt://localhost:7687')}`")
+            st.markdown(f"**Configured user:** `{neo_status.get('user', 'neo4j')}`")
+            st.caption("After starting Neo4j, refresh this page.")
+        st.caption(neo_status.get("message", ""))
+
+    # --- Campaigns ---
     campaigns = neo4j_engine.correlate_campaigns()
+    email_count = 0
+    try:
+        from neo4j_engine import _analyzed_emails  # type: ignore
+        email_count = len(_analyzed_emails)
+    except Exception:
+        email_count = 0
+
     if campaigns:
         st.markdown(f"Detected **{len(campaigns)}** correlated threat campaign cluster(s):")
-        st.dataframe(pd.DataFrame(campaigns), width='stretch', hide_index=True)
+        df = pd.DataFrame(campaigns)
+        preferred = ["campaign_id", "shared_ioc_type", "shared_ioc", "correlated_emails_count"]
+        cols = [c for c in preferred if c in df.columns] + [c for c in df.columns if c not in preferred]
+        st.dataframe(df[cols], width='stretch', hide_index=True)
     else:
-        st.caption("No multi-email campaign correlations detected.")
+        st.info(
+            f"**No shared infrastructure across {email_count} analyzed email(s).** "
+            "Campaign correlation requires 2 or more emails that share a domain, IP, "
+            "or URL. Upload more emails or run the demo seeder:"
+        )
+        st.code("python scripts/seed_demo_campaign.py", language="bash")
 
     st.markdown("</div>", unsafe_allow_html=True)
 
