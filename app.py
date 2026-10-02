@@ -913,7 +913,6 @@ with tab1:
                 st.caption("No significant legitimate tokens detected.")
 
     st.markdown("</div>", unsafe_allow_html=True)
-    render_legal_disclaimer()
 
 
 
@@ -993,7 +992,6 @@ with tab2:
             st.caption("No audit log entries recorded yet.")
 
     st.markdown("</div>", unsafe_allow_html=True)
-    render_legal_disclaimer()
 
 
 # ==========================================
@@ -1041,7 +1039,6 @@ with tab3:
         st.markdown(f"**{k}**: `<code class='mono-font'>{v}</code>`", unsafe_allow_html=True)
 
     st.markdown("</div>", unsafe_allow_html=True)
-    render_legal_disclaimer()
 
 
 # ==========================================
@@ -1085,7 +1082,6 @@ with tab4:
     st.caption(f"Infrastructure Correlation: {graph_data['num_nodes']} Entities, {graph_data['num_edges']} Threat Relationships")
 
     st.markdown("</div>", unsafe_allow_html=True)
-    render_legal_disclaimer()
 
 
 # ==========================================
@@ -1152,4 +1148,7 @@ with tab5:
         st.caption("No multi-email campaign correlations detected.")
 
     st.markdown("</div>", unsafe_allow_html=True)
-    render_legal_disclaimer()
+
+
+# --- GLOBAL LEGAL DISCLAIMER FOOTER ---
+render_legal_disclaimer()
