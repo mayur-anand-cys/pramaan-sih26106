@@ -1,4 +1,6 @@
 import streamlit as st
+from streamlit.components.v1 import html as st_html
+import os as _os_78
 import os
 import datetime
 import email
@@ -899,12 +901,13 @@ def render_legal_disclaimer():
 
 
 # --- 5 HORIZONTAL TABS ---
-tab1, tab2, tab3, tab4, tab5 = st.tabs([
+tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
     "Tab 1: Triage Overview",
     "Tab 2: Authentication",
     "Tab 3: Content & URL",
     "Tab 4: Relay & Route",
-    "Tab 5: IP & Domain Intel"
+    "Tab 5: IP & Domain Intel",
+    "Tab 6: SOC Campaign Graph"
 ])
 
 # ==========================================
@@ -1374,6 +1377,53 @@ with tab5:
             "or URL. Upload more emails or run the demo seeder:"
         )
         st.code("python scripts/seed_demo_campaign.py", language="bash")
+
+    st.markdown("</div>", unsafe_allow_html=True)
+
+
+# ==========================================
+# TAB 6: SOC CAMPAIGN GRAPH (Issue #78)
+# ==========================================
+with tab6:
+    st.markdown("<div class='soc-card'>", unsafe_allow_html=True)
+    st.markdown("### SOC Campaign Threat Graph")
+    st.caption(
+        "Interactive 3D infrastructure graph for a Neo4j campaign. "
+        "Drag to rotate, hover for node details, scroll to zoom."
+    )
+
+    _api_base_78 = _os_78.getenv("PRAMAAN_API_BASE", "http://localhost:8000")
+
+    _col_a, _col_b = st.columns([3, 1])
+    with _col_a:
+        _campaign_id_78 = st.text_input(
+            "Campaign ID",
+            value="CAMP-001",
+            key="soc_graph_campaign_id",
+            help="Neo4j campaign ID, e.g. CAMP-001. You can also use the numeric form (e.g. 1).",
+        )
+    with _col_b:
+        st.write("")
+        st.write("")
+        _load_78 = st.button("Load graph", key="soc_graph_load", width='stretch')
+
+    if _load_78 and _campaign_id_78:
+        try:
+            _url_78 = f"{_api_base_78}/soc/panels/graph"
+            _resp_78 = requests.get(
+                _url_78, params={"campaign_id": _campaign_id_78}, timeout=15
+            )
+            if _resp_78.status_code == 200:
+                st_html(_resp_78.text, height=620, scrolling=False)
+            else:
+                st.error(f"API error {_resp_78.status_code}: {_resp_78.text[:200]}")
+        except requests.RequestException as _e:
+            st.error(
+                f"Could not reach API at {_api_base_78}. "
+                f"Start the API with `uvicorn api:app --reload`. ({_e})"
+            )
+    else:
+        st.info("Enter a campaign ID and click **Load graph**.")
 
     st.markdown("</div>", unsafe_allow_html=True)
 

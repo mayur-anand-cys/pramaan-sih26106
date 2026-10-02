@@ -74,6 +74,87 @@ def build_threat_infrastructure_graph(
         "edges": [{"source": u, "target": v, "data": G.edges[u, v]} for u, v in G.edges()]
     }
 
+def build_campaign_graph(campaign_id: str) -> Dict[str, Any]:
+    """
+    Load a Neo4j campaign subgraph and convert it into the same dict shape
+    that build_threat_infrastructure_graph() returns, so the existing
+    generate_plotly_threat_graph() can render it without modification.
+
+    Accepts campaign IDs in any of the formats:
+      - "CAMP-001"     (from neo4j_engine.correlate_campaigns)
+      - "0042"         (numeric shortcut — tries "CAMP-0042" as fallback)
+      - anything else  (passed through verbatim)
+    """
+    try:
+        from backend.graph.queries import get_campaign_graph
+    except Exception as e:
+        return {
+            "graph": nx.DiGraph(),
+            "num_nodes": 0,
+            "num_edges": 0,
+            "nodes": [],
+            "edges": [],
+            "campaign_id": campaign_id,
+            "error": f"campaign query unavailable: {e}",
+        }
+
+    # Try the given id, then "CAMP-<zero-padded>" as a fallback
+    cg = get_campaign_graph(campaign_id)
+    if not cg or not cg.get("nodes"):
+        try:
+            padded = f"CAMP-{int(campaign_id):03d}"
+            alt = get_campaign_graph(padded)
+            if alt and alt.get("nodes"):
+                cg = alt
+                campaign_id = padded
+        except (ValueError, TypeError):
+            pass
+
+    if not cg or not cg.get("nodes"):
+        return {
+            "graph": nx.DiGraph(),
+            "num_nodes": 0,
+            "num_edges": 0,
+            "nodes": [],
+            "edges": [],
+            "campaign_id": campaign_id,
+        }
+
+    G = nx.DiGraph()
+
+    for n in cg.get("nodes", []):
+        nid = n.get("id")
+        if not nid:
+            continue
+        ntype = n.get("type", "Email").upper()
+        nlabel = n.get("label", nid)
+        G.add_node(nid, type=ntype, label=nlabel)
+
+    for e in cg.get("edges", []):
+        src_id = e.get("source")
+        tgt_id = e.get("target")
+        if not src_id or not tgt_id:
+            continue
+        # Ensure referenced nodes exist
+        if src_id not in G:
+            G.add_node(src_id, type="UNKNOWN", label=src_id)
+        if tgt_id not in G:
+            G.add_node(tgt_id, type="UNKNOWN", label=tgt_id)
+        G.add_edge(src_id, tgt_id, relation=e.get("label", ""))
+
+    return {
+        "graph": G,
+        "num_nodes": G.number_of_nodes(),
+        "num_edges": G.number_of_edges(),
+        "nodes": [{"id": n, "data": dict(G.nodes[n])} for n in G.nodes()],
+        "edges": [
+            {"source": u, "target": v, "data": dict(G.edges[u, v])}
+            for u, v in G.edges()
+        ],
+        "campaign_id": campaign_id,
+    }
+
+
 def generate_plotly_threat_graph(graph_data: Dict[str, Any]) -> go.Figure:
     """
     Generate an interactive Plotly 3D Network Graph figure.

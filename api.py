@@ -5,6 +5,7 @@ import json
 import logging
 import uvicorn
 from fastapi import FastAPI, File, UploadFile, HTTPException, Query
+from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Dict, List, Any, Optional
@@ -547,3 +548,51 @@ async def enrich_indicator(indicator: str = Query(..., description="IP, domain, 
 def intel_cache_stats():
     """Return cache performance stats."""
     return get_cache_stats()
+
+
+# ═══════════════════════════════════════════════════════════════
+# SOC Panel Fragments (Issue #78)
+# ═══════════════════════════════════════════════════════════════
+
+@app.get("/soc/panels/graph", response_class=HTMLResponse)
+async def soc_graph_panel(
+    campaign_id: str = Query(..., description="Neo4j campaign ID, e.g. CAMP-001 or 0042"),
+):
+    """
+    Return a self-contained HTML fragment containing the Plotly 3D threat
+    graph for a campaign. Embeds plotly.js via CDN, responds to panel
+    resize, and supports drag-rotate + hover (default Plotly behaviour).
+
+    Usage from Streamlit:
+        components.html(requests.get(f"{API}/soc/panels/graph?campaign_id=...").text, height=600)
+    """
+    import graph_engine as _ge  # local import avoids circular issues on cold start
+
+    graph_data = _ge.build_campaign_graph(campaign_id)
+    if graph_data.get("num_nodes", 0) == 0:
+        return HTMLResponse(
+            content=(
+                "<div style='padding:1rem 1.25rem;color:#a16207;"
+                "background:#fef3c7;border-radius:6px;font-family:system-ui;'>"
+                f"No graph data for campaign <code>{campaign_id}</code>. "
+                "Verify the campaign ID."
+                "</div>"
+            ),
+            status_code=200,
+        )
+
+    fig = _ge.generate_plotly_threat_graph(graph_data)
+
+    html = fig.to_html(
+        include_plotlyjs="cdn",
+        full_html=False,
+        config={
+            "responsive": True,
+            "displayModeBar": False,
+            "scrollZoom": True,
+        },
+        default_height="100%",
+        default_width="100%",
+    )
+    return HTMLResponse(content=html)
+
