@@ -666,45 +666,46 @@ pdf_bytes = generate_pdf_report(
     relay_hops=hop_rows,
 )
 
-# --- TOP MAIN HEADER (Flush with top) ---
-top_col1, top_col2 = st.columns([3, 1])
+# --- TOP MAIN HEADER ---
+top_col1, top_col2 = st.columns([3, 2])
 
 with top_col1:
     analyst_badge = ""
     if xai_result.get("requires_analyst_review"):
         analyst_badge = """
-        <span style="background-color: rgba(239, 68, 68, 0.18); border: 1.5px solid #ef4444; color: #ef4444; padding: 4px 12px; border-radius: 6px; font-weight: 800; font-size: 0.85rem; font-family: 'JetBrains Mono', monospace; margin-left: 12px; display: inline-block; vertical-align: middle;">
-             ANALYST REVIEW REQUIRED
+        <span style="background-color: rgba(239, 68, 68, 0.18);
+                     border: 1.5px solid #ef4444; color: #ef4444;
+                     padding: 4px 12px; border-radius: 6px;
+                     font-weight: 800; font-size: 0.85rem;
+                     font-family: 'JetBrains Mono', monospace;
+                     margin-left: 12px; display: inline-block;
+                     vertical-align: middle;">
+            ANALYST REVIEW REQUIRED
         </span>
         """
     st.markdown(f"""
     <div style="margin-top: -15px; margin-bottom: 8px;">
-        <span style="font-size: 1.4rem; font-weight: 800; color: #f8fafc;"> Target Artifact:</span> 
-        <code style="font-size: 1.2rem; color: #7dd3fc; background-color: #1e293b; padding: 4px 10px; border-radius: 6px;">{file_name}</code>
+        <span style="font-size: 1.4rem; font-weight: 800; color: #f8fafc;">Target Artifact:</span>
+        <code style="font-size: 1.2rem; color: #7dd3fc; background-color: #1e293b;
+                     padding: 4px 10px; border-radius: 6px;">{file_name}</code>
         {analyst_badge}
     </div>
     """, unsafe_allow_html=True)
-    if st.button(" Upload another .eml", key="reset_btn"):
-        st.session_state.clear()
-        st.rerun()
-
 
 with top_col2:
-    btn_c1, btn_c2 = st.columns(2)
-    with btn_c1:
+    up_col, dl_col = st.columns(2)
+    with up_col:
+        if st.button("Upload another .eml", key="reset_btn", use_container_width=True):
+            st.session_state.clear()
+            st.rerun()
+    with dl_col:
         st.download_button(
-            label=" Download Report",
+            label="Download Report",
             data=pdf_bytes,
             file_name=f"PRAMAAN_Report_{file_name}.pdf",
             mime="application/pdf",
             width='stretch'
         )
-    with btn_c2:
-        st.markdown("""
-        <div class="stAppDeployButton">
-            <button> Deploy</button>
-        </div>
-        """, unsafe_allow_html=True)
 
 st.markdown("<div style='margin-bottom: 12px;'></div>", unsafe_allow_html=True)
 
