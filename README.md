@@ -333,11 +333,12 @@ pramaan-sih26106/
 
 | Role | Name | GitHub |
 |------|------|--------|
-| 👑 Team Lead | Mayur Anand | [@mayur-anand-cys](https://github.com/mayur-anand-cys) |
-| 🛡️ Member | Shreya Garje | [@shreyagarje07-star](https://github.com/shreyagarje07-star) |
-| 🛡️ Member | Keerthana C | [@keerthanac0905](https://github.com/keerthanac0905) |
-| 🛡️ Member | Sneha Namratha | [@snehanamratha](https://github.com/snehanamratha) |
-| 🛡️ Member | Charitha Sri Reddy | [@charithasrireddy](https://github.com/charithasrireddy) |
+| Team Lead | Mayur Anand | [@mayur-anand-cys](https://github.com/mayur-anand-cys) |
+| Member | Sudarshan Iyengar | [@sudarshaniyengar324-cloud](https://github.com/sudarshaniyengar324-cloud) |
+| Member | Shreya Garje | [@shreyagarje07-star](https://github.com/shreyagarje07-star) |
+| Member | Keerthana C | [@keerthanac0905](https://github.com/keerthanac0905) |
+| Member | Sneha Namratha | [@snehanamratha](https://github.com/snehanamratha) |
+| Member | Charitha Sri Reddy | [@charithasrireddy](https://github.com/charithasrireddy) |
 
 **Institute / College:** Vemana Institute of Technology, Bengaluru  
 **Team ID:** SIH26106-Apex
