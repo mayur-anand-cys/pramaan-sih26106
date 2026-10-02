@@ -41,6 +41,7 @@ st.set_page_config(
 # --- Authentication gate ---
 from backend.auth.login_ui import render_login_page
 from backend.auth.authenticator import get_current_user, logout as auth_logout
+from blockchain.anchor import blockchain_status
 
 if not render_login_page():
     st.stop()
@@ -484,6 +485,149 @@ st.markdown(f"""
         color: #7dd3fc !important;
         border-top: 3px solid #7dd3fc !important;
     }}
+    
+    /* --- pramaan-soc.css --- */
+/* ============================================================
+   pramaan-soc.css
+   PRAMAAN SOC theme — tab borders, chart panels, header pills
+   ============================================================ */
+
+/* --- Tabs: consistent bordered look --- */
+.stTabs [data-baseweb="tab-list"] {{
+    gap: 8px;
+    background-color: transparent;
+    border-bottom: 1px solid #1e293b;
+    padding-bottom: 6px;
+}}
+
+.stTabs [data-baseweb="tab"] {{
+    background-color: #121926;
+    border: 1px solid #1e293b;
+    border-radius: 6px 6px 0 0;
+    color: #94a3b8;
+    padding: 10px 20px;
+    font-weight: 600;
+    font-family: 'Inter', sans-serif;
+    transition: border-color 0.15s ease, color 0.15s ease;
+}}
+
+.stTabs [data-baseweb="tab"]:hover {{
+    border-color: #7dd3fc;
+    color: #bae6fd;
+}}
+
+.stTabs [aria-selected="true"] {{
+    background-color: #1e293b !important;
+    color: #7dd3fc !important;
+    border: 1px solid #7dd3fc !important;
+    border-bottom: 1px solid #1e293b !important;
+    box-shadow: 0 -2px 0 #7dd3fc inset;
+}}
+
+/* --- Chart panel: bordered container for analytical charts --- */
+.soc-chart-panel {{
+    background-color: #121926;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    padding: 16px;
+    margin-top: 8px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}}
+
+/* --- Top header card --- */
+.soc-header {{
+    background-color: #121926;
+    border: 1px solid #1e293b;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}}
+
+.soc-header-row {{
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    justify-content: space-between;
+}}
+
+/* --- Status pills --- */
+.soc-status-pill {{
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 9999px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    border: 1px solid;
+}}
+
+.soc-status-ok {{
+    background-color: rgba(61, 220, 151, 0.12);
+    color: #3ddc97;
+    border-color: #3ddc97;
+}}
+
+.soc-status-bad {{
+    background-color: rgba(226, 75, 74, 0.12);
+    color: #e24b4a;
+    border-color: #e24b4a;
+}}
+
+.soc-status-warn {{
+    background-color: rgba(251, 191, 109, 0.12);
+    color: #fbbf6d;
+    border-color: #fbbf6d;
+}}
+
+.soc-status-dot {{
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background-color: currentColor;
+}}
+
+/* --- User profile chip --- */
+.soc-user-chip {{
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    background-color: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    color: #e2e8f0;
+}}
+
+.soc-user-role {{
+    color: #7dd3fc;
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 0.7rem;
+    letter-spacing: 0.05em;
+}}
+
+/* --- Search bar --- */
+.soc-search input {{
+    background-color: #0d1117 !important;
+    border: 1px solid #1e293b !important;
+    color: #e2e8f0 !important;
+    border-radius: 6px !important;
+    font-family: 'JetBrains Mono', monospace !important;
+    font-size: 0.85rem !important;
+}}
+
+.soc-search input:focus {{
+    border-color: #7dd3fc !important;
+    box-shadow: 0 0 0 2px rgba(125, 211, 252, 0.2) !important;
+}}
     </style>
 """, unsafe_allow_html=True)
 
@@ -667,45 +811,96 @@ pdf_bytes = generate_pdf_report(
 )
 
 # --- TOP MAIN HEADER ---
-top_col1, top_col2 = st.columns([3, 2])
+_neo = neo4j_engine.test_connection()
+_neo_ok = (_neo.get("status") == "CONNECTED")
+_neo_cls = "soc-status-ok" if _neo_ok else "soc-status-bad"
+_neo_txt = "Neo4j " + ("CONNECTED" if _neo_ok else "OFFLINE")
 
-with top_col1:
-    analyst_badge = ""
-    if xai_result.get("requires_analyst_review"):
-        analyst_badge = """
-        <span style="background-color: rgba(239, 68, 68, 0.18);
-                     border: 1.5px solid #ef4444; color: #ef4444;
-                     padding: 4px 12px; border-radius: 6px;
-                     font-weight: 800; font-size: 0.85rem;
-                     font-family: 'JetBrains Mono', monospace;
-                     margin-left: 12px; display: inline-block;
-                     vertical-align: middle;">
-            ANALYST REVIEW REQUIRED
-        </span>
-        """
-    st.markdown(f"""
-    <div style="margin-top: -15px; margin-bottom: 8px;">
-        <span style="font-size: 1.4rem; font-weight: 800; color: #f8fafc;">Target Artifact:</span>
-        <code style="font-size: 1.2rem; color: #7dd3fc; background-color: #1e293b;
-                     padding: 4px 10px; border-radius: 6px;">{file_name}</code>
-        {analyst_badge}
-    </div>
-    """, unsafe_allow_html=True)
+try:
+    _sep = blockchain_status()
+    _sep_mode = _sep.get("mode", "SIMULATED")
+    if _sep_mode == "LIVE":
+        _sep_cls, _sep_txt = "soc-status-ok", "Sepolia LIVE"
+    elif _sep.get("connected"):
+        _sep_cls, _sep_txt = "soc-status-warn", "Sepolia READY"
+    else:
+        _sep_cls, _sep_txt = "soc-status-bad", "Sepolia OFFLINE"
+except Exception:
+    _sep_cls, _sep_txt = "soc-status-bad", "Sepolia OFFLINE"
 
-with top_col2:
-    up_col, dl_col = st.columns(2)
-    with up_col:
-        if st.button("Upload another .eml", key="reset_btn", use_container_width=True):
-            st.session_state.clear()
-            st.rerun()
-    with dl_col:
-        st.download_button(
-            label="Download Report",
-            data=pdf_bytes,
-            file_name=f"PRAMAAN_Report_{file_name}.pdf",
-            mime="application/pdf",
-            width='stretch'
-        )
+_user_label = _user.get("username", "unknown") if _user else "guest"
+_user_role_label = _role.upper() if _role else "ANALYST"
+
+_hdr_c1, _hdr_c2, _hdr_c3 = st.columns([2, 2, 1])
+
+with _hdr_c1:
+    st.text_input(
+        "search",
+        placeholder="Search SHA-256, IOC, sender� (coming soon)",
+        disabled=True,
+        label_visibility="collapsed",
+        key="global_search_bar",
+    )
+
+with _hdr_c2:
+    st.markdown(
+        '<div class="soc-header-row">'
+        '<span class="soc-status-pill ' + _neo_cls + '">'
+        '<span class="soc-status-dot"></span>' + _neo_txt + '</span>'
+        '<span class="soc-status-pill ' + _sep_cls + '">'
+        '<span class="soc-status-dot"></span>' + _sep_txt + '</span>'
+        '</div>',
+        unsafe_allow_html=True,
+    )
+
+with _hdr_c3:
+    st.markdown(
+        '<div class="soc-user-chip">'
+        + _user_label +
+        ' <span class="soc-user-role">' + _user_role_label + '</span>'
+        '</div>',
+        unsafe_allow_html=True,
+    )
+    if st.button("Sign out", key="header_signout", use_container_width=True):
+        auth_logout()
+        st.rerun()
+
+# Artifact banner
+_artifacts_badge = ""
+if xai_result.get("requires_analyst_review"):
+    _artifacts_badge = (
+        '<span style="background-color: rgba(239, 68, 68, 0.18); '
+        'border: 1.5px solid #ef4444; color: #ef4444; padding: 4px 12px; '
+        'border-radius: 6px; font-weight: 800; font-size: 0.85rem; '
+        "font-family: 'JetBrains Mono', monospace; margin-left: 12px; "
+        'display: inline-block; vertical-align: middle;">'
+        'ANALYST REVIEW REQUIRED</span>'
+    )
+st.markdown(
+    '<div style="margin-top: 6px; margin-bottom: 12px;">'
+    '<span style="font-size: 1.1rem; font-weight: 800; color: #f8fafc;">Target Artifact:</span> '
+    '<code style="font-size: 1.0rem; color: #7dd3fc; background-color: #1e293b; '
+    'padding: 4px 10px; border-radius: 6px;">' + file_name + '</code>'
+    + _artifacts_badge +
+    '<span style="margin-left: 16px;">'
+    '</span>'
+    '</div>',
+    unsafe_allow_html=True,
+)
+
+_dl_c1, _dl_c2 = st.columns(2)
+with _dl_c1:
+    if st.button("Upload another .eml", key="reset_btn", use_container_width=True):
+        st.session_state.clear()
+        st.rerun()
+with _dl_c2:
+    st.download_button(
+        label="Download Report",
+        data=pdf_bytes,
+        file_name="PRAMAAN_Report_" + file_name + ".pdf",
+        mime="application/pdf",
+        use_container_width=True,
+    )
 
 st.markdown("<div style='margin-bottom: 12px;'></div>", unsafe_allow_html=True)
 
@@ -842,6 +1037,7 @@ with tab1:
 
     with ov_c2:
         st.markdown("#### Threat Factor Weight Breakdown")
+        st.markdown("<div class='soc-chart-panel'>", unsafe_allow_html=True)
         if risk_factors:
             df_f = pd.DataFrame(risk_factors)
             chart = alt.Chart(df_f).mark_bar().encode(
@@ -853,6 +1049,7 @@ with tab1:
             st.altair_chart(chart, width='stretch')
         else:
             st.info("Clean factor breakdown.")
+        st.markdown("</div>", unsafe_allow_html=True)
 
     # SHAP Waterfall Chart Sub-Section
     st.markdown("---")
