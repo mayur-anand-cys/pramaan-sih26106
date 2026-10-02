@@ -973,7 +973,7 @@ with tab2:
     st.dataframe(matrix_df, width='stretch', hide_index=True)
 
     st.markdown("---")
-    st.markdown("#### Zero-Knowledge Forensic Verification (ZKFV) Proof")
+    st.markdown("#### Tamper-Evident Forensic Verification (ZKFV) Proof")
     st.code(merkle_root, language="text")
     st.button(" Copy Merkle Root", key="copy_merkle_t2", on_click=lambda: st.write("Copied!"))
 
