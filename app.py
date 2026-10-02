@@ -351,21 +351,8 @@ def calculate_risk_score(
     return final_score, factors
 
 
-# --- Theme Configuration ---
-if 'theme' not in st.session_state:
-    st.session_state.theme = "Example A (Dark Blue)"
-
-# Sidebar Theme Switcher & Data Source
+# --- Sidebar ---
 with st.sidebar:
-    st.markdown("### Theme Configuration")
-    theme_choice = st.radio(
-        "Background Theme",
-        ["Example A (Dark Blue)", "Example B (Dark Wine)"],
-        index=0 if st.session_state.theme == "Example A (Dark Blue)" else 1
-    )
-    st.session_state.theme = theme_choice
-
-    st.markdown("---")
     st.markdown("### SOC Data Source")
     use_sample = st.checkbox(" Use Sample Phishing EML", value=False)
     uploaded_file = st.file_uploader("Upload .eml File", type=["eml"])
@@ -377,15 +364,16 @@ with st.sidebar:
         auth_logout()
         st.rerun()
 
-# Dynamic CSS Theme Ingestion based on Selection
-if st.session_state.theme == "Example A (Dark Blue)":
-    bg_gradient = "linear-gradient(135deg, #0f1419 0%, #1a2332 100%)"
-    card_bg = "#121926"
-    card_border = "#1e293b"
+# Role-based theming — solid colors per SOC design system (#102)
+# No gradients, no shadows. Color = meaning only.
+if _role == "analyst":
+    bg_gradient = "#0a0e14"
+    card_bg = "#0d1117"
+    card_border = "#30363d"
 else:
-    bg_gradient = "linear-gradient(135deg, #1a0f14 0%, #2a1820 100%)"
-    card_bg = "#22131b"
-    card_border = "#3a202d"
+    bg_gradient = "#0a0e14"
+    card_bg = "#0d1117"
+    card_border = "#30363d"
 
 st.markdown(f"""
     <style>
@@ -452,14 +440,8 @@ st.markdown(f"""
         font-family: 'JetBrains Mono', monospace;
     }}
 
-    .stAppDeployButton button, [data-testid="stAppDeployButton"] button {{
-        background: linear-gradient(135deg, #ff1744 0%, #d50000 100%) !important;
-        color: #ffffff !important;
-        border: 1px solid #ff5252 !important;
-        border-radius: 6px !important;
-        font-weight: 700 !important;
-        padding: 6px 18px !important;
-        box-shadow: 0 0 15px rgba(255, 23, 68, 0.8) !important;
+    .stAppDeployButton, [data-testid="stAppDeployButton"] {{
+        display: none !important;
     }}
 
     /* Streamlit Tabs Styling */
@@ -521,20 +503,7 @@ if raw_bytes is None:
         </div>
         """, unsafe_allow_html=True)
 
-        landing_upload = st.file_uploader("Drag & Drop `.eml` file here", type=["eml"], key="landing_uploader")
-        if landing_upload is not None:
-            raw_bytes = landing_upload.getvalue()
-            file_name = landing_upload.name
-            st.rerun()
-
-        st.markdown("<div style='text-align: center; margin-top: 15px;'>", unsafe_allow_html=True)
-        if st.checkbox(" Use Sample Phishing EML (gmail.eml)", key="landing_sample"):
-            sample_path = Path(__file__).parent / "gmail.eml"
-            if sample_path.exists():
-                raw_bytes = sample_path.read_bytes()
-                file_name = "gmail.eml"
-                st.rerun()
-        st.markdown("</div>", unsafe_allow_html=True)
+        st.info("Use the **SOC Data Source** panel in the sidebar to upload an .eml file or load the sample.")
 
     st.stop()
 
