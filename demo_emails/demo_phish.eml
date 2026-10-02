@@ -1,0 +1,39 @@
+From: "PayPal Security" <security@paypa1-verify.com>
+To: "victim@example.com"
+Subject: URGENT: Your account will be SUSPENDED in 24 hours!
+Date: Tue, 15 Oct 2024 02:47:03 +0000
+Message-ID: <20241015024703.67890@paypa1-verify.com>
+MIME-Version: 1.0
+Content-Type: text/html; charset="UTF-8"
+Return-Path: <noreply@paypa1-verify.com>
+Received: from unknown (unknown [198.51.100.77])
+    by mx.example.com with SMTP id phish001
+    for <victim@example.com>;
+    Tue, 15 Oct 2024 02:47:04 +0000
+Authentication-Results: mx.example.com;
+    spf=fail (sender IP is 198.51.100.77) smtp.mailfrom=paypa1-verify.com;
+    dkim=none;
+    dmarc=fail (p=REJECT sp=REJECT) header.from=paypa1-verify.com
+
+<html><body>
+<p>Dear Customer,</p>
+
+<p><b>Your PayPal account has been SUSPENDED due to suspicious activity.</b></p>
+
+<p>You have <b>24 HOURS</b> to verify your account or it will be permanently closed.</p>
+
+<p>Click here to restore access immediately:
+<a href="http://paypa1-verify.secure-login.example/phish.php">https://www.paypal.com/verify</a></p>
+
+<p>You must confirm your identity by providing:
+<ul>
+<li>Full Name</li>
+<li>Credit Card Number</li>
+<li>CVV and Expiry Date</li>
+<li>Online Banking Password</li>
+</ul></p>
+
+<p><b>DO NOT DELAY. Your account is at risk.</b></p>
+
+<p>PayPal Security Team</p>
+</body></html>
