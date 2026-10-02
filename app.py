@@ -812,7 +812,7 @@ pdf_bytes = generate_pdf_report(
 
 # --- TOP MAIN HEADER ---
 _neo = neo4j_engine.test_connection()
-_neo_ok = (_neo.get("status") == "CONNECTED")
+_neo_ok = _neo.get("mode") == "neo4j" or _neo.get("status") in ("CONNECTED", "Live Neo4j")
 _neo_cls = "soc-status-ok" if _neo_ok else "soc-status-bad"
 _neo_txt = "Neo4j " + ("CONNECTED" if _neo_ok else "OFFLINE")
 
@@ -836,7 +836,7 @@ _hdr_c1, _hdr_c2, _hdr_c3 = st.columns([2, 2, 1])
 with _hdr_c1:
     st.text_input(
         "search",
-        placeholder="Search SHA-256, IOC, sender� (coming soon)",
+        placeholder="Search SHA-256, IOC, sender ... (coming soon)",
         disabled=True,
         label_visibility="collapsed",
         key="global_search_bar",
