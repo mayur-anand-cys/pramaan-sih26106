@@ -4,6 +4,7 @@ from typing import Dict, List, Any, Optional
 import networkx as nx
 
 logger = logging.getLogger("pramaan.neo4j")
+logger.setLevel(logging.ERROR)  # silence expected offline warnings
 
 # Neo4j Environment Configuration
 NEO4J_URI = os.getenv("NEO4J_URI", "bolt://localhost:7687")
@@ -22,14 +23,35 @@ except ImportError:
 _in_memory_graph = nx.MultiDiGraph()
 _analyzed_emails: Dict[str, Dict[str, Any]] = {}
 
+import time as _time
+
+_last_connection_attempt: float = 0.0
+_last_connection_ok: bool = False
+_connection_backoff_seconds: float = 30.0
+
+
 def get_neo4j_driver() -> Optional[Any]:
     """
     Establish or verify connection to Neo4j database using environment credentials.
     Returns Neo4j Driver object or None if unreachable / driver missing.
+
+    Caches the failure state for 30s to avoid hammering the connection on
+    every streamlit rerun or every graph query.
     """
+    global _last_connection_attempt, _last_connection_ok
+
     if not HAS_NEO4J_DRIVER:
         logger.warning("neo4j library not available.")
         return None
+
+    now = _time.time()
+
+    # If we recently failed, skip retrying until backoff expires
+    if not _last_connection_ok and (now - _last_connection_attempt) < _connection_backoff_seconds:
+        return None
+
+    _last_connection_attempt = now
+
     try:
         driver = GraphDatabase.driver(
             NEO4J_URI,
@@ -37,34 +59,62 @@ def get_neo4j_driver() -> Optional[Any]:
             connection_timeout=1.0
         )
         driver.verify_connectivity()
+        if not _last_connection_ok:
+            logger.info(f"Neo4j connection established ({NEO4J_URI})")
+        _last_connection_ok = True
         return driver
     except Exception as e:
-        logger.warning(f"Neo4j connection failed ({NEO4J_URI}): {e}")
+        if _last_connection_ok:
+            logger.warning(f"Neo4j connection lost ({NEO4J_URI}): {e}")
+        _last_connection_ok = False
         return None
 
 def test_connection() -> Dict[str, Any]:
     """
     Check Neo4j connectivity and return connection status details.
+
+    Returns:
+        {
+            "connected": bool,
+            "mode": "neo4j" | "memory",
+            "status": human-readable label with emoji,
+            "status_color": "green" | "amber" | "red",
+            "uri": NEO4J_URI,
+            "user": NEO4J_USER,
+            "message": guidance string,
+            "driver_available": bool,
+            "fallback_mode": "IN_MEMORY_GRAPH" (only when offline)
+        }
     """
     driver = get_neo4j_driver()
     if driver is not None:
         try:
             driver.close()
             return {
-                "status": "CONNECTED",
+                "connected": True,
+                "mode": "neo4j",
+                "status": "Live Neo4j",
+                "status_color": "green",
                 "uri": NEO4J_URI,
                 "user": NEO4J_USER,
-                "driver_available": True
+                "message": f"Connected to Neo4j at {NEO4J_URI}",
+                "driver_available": True,
             }
         except Exception as e:
             logger.error(f"Error checking Neo4j connectivity: {e}")
 
+    # Neo4j is offline  using NetworkX fallback (still functional, just not persistent)
     return {
-        "status": "DISCONNECTED",
+        "connected": False,
+        "mode": "memory",
+        "status": "In-Memory Mode",
+        "status_color": "amber",
         "uri": NEO4J_URI,
         "user": NEO4J_USER,
+        "message": "Neo4j offline  using in-memory NetworkX fallback. Correlations work but are not persisted.",
+        "how_to_enable": "Run: docker-compose up -d neo4j",
         "driver_available": HAS_NEO4J_DRIVER,
-        "fallback_mode": "IN_MEMORY_GRAPH"
+        "fallback_mode": "IN_MEMORY_GRAPH",
     }
 
 def ingest_threat_data(
@@ -221,17 +271,8 @@ def correlate_campaigns() -> List[Dict[str, Any]]:
             })
             c_idx += 1
 
-    # If no 2+ email overlap, synthesize campaign clusters for existing emails if present
-    if not campaigns and _analyzed_emails:
-        for idx, (sha, email_info) in enumerate(_analyzed_emails.items(), 1):
-            campaigns.append({
-                "campaign_id": f"CAMP-{idx:03d}",
-                "shared_ioc_type": "DOMAIN",
-                "shared_ioc": email_info["domains"][0] if email_info["domains"] else "unknown.com",
-                "correlated_emails_count": 1,
-                "email_hashes": [sha]
-            })
-
+    # Return only real campaigns (2+ emails sharing infrastructure).
+    # No synthesized clusters — the UI will explain when there are none.
     return campaigns
 
 def get_campaign_details(campaign_id: str) -> Dict[str, Any]:
@@ -261,3 +302,59 @@ def get_campaign_details(campaign_id: str) -> Dict[str, Any]:
         "correlated_emails_count": target.get("correlated_emails_count", 0),
         "emails": emails_meta
     }
+
+
+def seed_demo_data() -> int:
+    """
+    Insert 3 synthetic demo emails sharing 'phish-server.com'.
+    Idempotent — safe to call repeatedly.
+    Returns count of emails ingested.
+    """
+    import hashlib
+
+    demo_emails = [
+        {
+            "seed": "demo-001",
+            "sender": "security@phish-server.com",
+            "return_path": "bounce@phish-server.com",
+            "domains": ["phish-server.com", "fake-bank-login.net"],
+            "ips": ["203.0.113.10"],
+            "urls": ["http://phish-server.com/login", "http://fake-bank-login.net/verify"],
+            "risk_score": 85.0,
+        },
+        {
+            "seed": "demo-002",
+            "sender": "billing@phish-server.com",
+            "return_path": "bounce@phish-server.com",
+            "domains": ["phish-server.com", "fake-bank-login.net"],
+            "ips": ["203.0.113.11"],
+            "urls": ["http://phish-server.com/invoice"],
+            "risk_score": 78.0,
+        },
+        {
+            "seed": "demo-003",
+            "sender": "hr@phish-server.com",
+            "return_path": "bounce@phish-server.com",
+            "domains": ["phish-server.com"],
+            "ips": ["203.0.113.12"],
+            "urls": ["http://phish-server.com/payroll"],
+            "risk_score": 92.0,
+        },
+    ]
+
+    count = 0
+    for e in demo_emails:
+        sha = hashlib.sha256(e["seed"].encode()).hexdigest()
+        if sha in _analyzed_emails:
+            continue
+        ingest_threat_data(
+            sha256=sha,
+            sender=e["sender"],
+            return_path=e["return_path"],
+            domains=e["domains"],
+            ips=e["ips"],
+            urls=e["urls"],
+            risk_score=e["risk_score"],
+        )
+        count += 1
+    return count
