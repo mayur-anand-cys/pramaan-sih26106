@@ -77,7 +77,7 @@ def test_connection() -> Dict[str, Any]:
         {
             "connected": bool,
             "mode": "neo4j" | "memory",
-            "status": human-readable label with emoji,
+            "status": human-readable label,
             "status_color": "green" | "amber" | "red",
             "uri": NEO4J_URI,
             "user": NEO4J_USER,
