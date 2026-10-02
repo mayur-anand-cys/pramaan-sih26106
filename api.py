@@ -407,8 +407,13 @@ def extract_attachments(msg: email.message.EmailMessage) -> List[Dict[str, Any]]
         if ctype in {"text/plain", "text/html"}:
             continue
         disp = str(part.get("Content-Disposition") or "").lower()
-        # Only accept as attachment if it has a filename or Content-Disposition
         filename = part.get_filename()
+
+        # Skip inline images (logos embedded via cid:) unless explicitly
+        # marked as attachment
+        if "attachment" not in disp and ctype.startswith("image/"):
+            continue
+
         if not filename and "attachment" not in disp:
             continue
         filename = filename or f"attachment_{len(attachments)}.bin"

@@ -248,6 +248,33 @@ def _count_embedded_ole(data: bytes) -> int:
 
 # ── Main API ─────────────────────────────────────────────────
 
+def _detect_macros_zip(data: bytes) -> Dict[str, Any]:
+    """
+    Detect VBA macros in OOXML files (.docm, .xlsm, .pptm).
+    These are ZIP archives containing a 'vbaProject.bin' entry.
+    """
+    result = {
+        "has_macros": False,
+        "vba_parts": [],
+        "embedded_ole_count": 0,
+        "error": None,
+    }
+    try:
+        with zipfile.ZipFile(io.BytesIO(data)) as z:
+            names = z.namelist()
+            vba_parts = [n for n in names if "vbaProject.bin" in n or "vbaProject" in n]
+            result["vba_parts"] = vba_parts
+            result["has_macros"] = len(vba_parts) > 0
+            result["embedded_ole_count"] = sum(
+                1 for n in names if "oleObject" in n.lower() or "embeddings" in n.lower()
+            )
+    except zipfile.BadZipFile as e:
+        result["error"] = f"not a ZIP: {e}"
+    except Exception as e:
+        result["error"] = f"{type(e).__name__}: {e}"
+    return result
+
+
 def analyze_attachment(filename: str, data: bytes) -> Dict[str, Any]:
     """
     Analyze a single attachment. Returns a dict with detections and risk score.
@@ -376,30 +403,3 @@ def analyze_attachments(files: List[Dict[str, Any]]) -> Dict[str, Any]:
 
 
 __all__ = ["analyze_attachment", "analyze_attachments", "RISK_POINTS"]
-
-
-def _detect_macros_zip(data: bytes) -> Dict[str, Any]:
-    """
-    Detect VBA macros in OOXML files (.docm, .xlsm, .pptm).
-    These are ZIP archives containing a 'vbaProject.bin' entry.
-    """
-    result = {
-        "has_macros": False,
-        "vba_parts": [],
-        "embedded_ole_count": 0,
-        "error": None,
-    }
-    try:
-        with zipfile.ZipFile(io.BytesIO(data)) as z:
-            names = z.namelist()
-            vba_parts = [n for n in names if "vbaProject.bin" in n or "vbaProject" in n]
-            result["vba_parts"] = vba_parts
-            result["has_macros"] = len(vba_parts) > 0
-            result["embedded_ole_count"] = sum(
-                1 for n in names if "oleObject" in n.lower() or "embeddings" in n.lower()
-            )
-    except zipfile.BadZipFile as e:
-        result["error"] = f"not a ZIP: {e}"
-    except Exception as e:
-        result["error"] = f"{type(e).__name__}: {e}"
-    return result
