@@ -987,7 +987,7 @@ verify_file = st.file_uploader(
 if verify_file is not None:
     verify_bytes = verify_file.getvalue()
     if st.button(" Verify Cryptographic Proof", width='stretch'):
-        is_valid, curr_root, exp_root = zkvf.verify_evidence_proof(verify_bytes, zkvf_proof)
+        is_valid, curr_root, exp_root = zkfv.verify_evidence_proof(verify_bytes, zkvf_proof)
         if is_valid:
             st.success(" **Evidence Integrity Verified**: Merkle root matches cryptographic proof!")
         else:
