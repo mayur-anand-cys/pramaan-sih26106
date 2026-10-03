@@ -1353,6 +1353,14 @@ with tab4:
     st.markdown("<div class='soc-chart-panel'>", unsafe_allow_html=True)
     st.plotly_chart(plotly_fig, width='stretch')
     st.caption(f"Infrastructure Correlation: {graph_data['num_nodes']} Entities, {graph_data['num_edges']} Threat Relationships")
+    st.markdown("""
+    <div style="display: flex; gap: 24px; margin-top: 12px; font-size: 0.85rem; color: #94a3b8; flex-wrap: wrap;">
+        <div><span style="display: inline-block; width: 12px; height: 12px; background: #7dd3fc; border-radius: 50%; margin-right: 6px;"></span> Email</div>
+        <div><span style="display: inline-block; width: 12px; height: 12px; background: #fbbf6d; border-radius: 50%; margin-right: 6px;"></span> Domain</div>
+        <div><span style="display: inline-block; width: 12px; height: 12px; background: #e24b4a; border-radius: 50%; margin-right: 6px;"></span> IP / URL</div>
+        <div><span style="display: inline-block; width: 12px; height: 12px; background: #a78bfa; border-radius: 50%; margin-right: 6px;"></span> ASN</div>
+    </div>
+    """, unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
     st.markdown("</div>", unsafe_allow_html=True)
