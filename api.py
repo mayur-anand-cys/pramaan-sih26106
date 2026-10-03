@@ -524,6 +524,31 @@ def calculate_risk_score(msg, body, urls, ips, auth_info, domain_alignment, ml_p
     final_score = min(100, max(0, score))
     return final_score, factors
 
+
+
+@app.post("/api/v1/dmarc/parse")
+async def parse_dmarc_endpoint(file: UploadFile = File(...)):
+    """Parse a DMARC aggregate report (ZIP, GZIP, or raw XML)."""
+    from backend.intel.dmarc_parser import parse_dmarc_report, summarize_dmarc
+
+    raw = await file.read()
+    if not raw:
+        raise HTTPException(status_code=400, detail="Uploaded file is empty.")
+
+    try:
+        records = parse_dmarc_report(raw)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Failed to parse DMARC report: {e}")
+
+    if not records:
+        raise HTTPException(status_code=400, detail="No DMARC records found in the uploaded file.")
+
+    return {
+        "records": records,
+        "summary": summarize_dmarc(records),
+    }
+
+
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
 

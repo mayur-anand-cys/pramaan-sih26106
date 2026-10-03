@@ -1220,14 +1220,71 @@ if verify_file is not None:
             st.error(" **Verification Failed**: Proof mismatch!")
             st.write(f"**Expected root:** `{exp_root}`")
             st.write(f"**Uploaded file root:** `{curr_root}`")
-    with st.expander(" View Forensic Audit Ledger", expanded=False):
-        audit_logs = zkfv.get_recent_audit_logs(10)
-        if audit_logs:
-            st.dataframe(pd.DataFrame(audit_logs), width='stretch', hide_index=True)
-        else:
-            st.caption("No audit log entries recorded yet.")
+with st.expander(" View Forensic Audit Ledger", expanded=False):
+    audit_logs = zkfv.get_recent_audit_logs(10)
+    if audit_logs:
+        st.dataframe(pd.DataFrame(audit_logs), width='stretch', hide_index=True)
+    else:
+        st.caption("No audit log entries recorded yet.")
 
-    st.markdown("</div>", unsafe_allow_html=True)
+with st.expander("DMARC Aggregate Reports", expanded=False):
+    st.markdown(
+        "Upload a DMARC aggregate XML report (as .zip, .gz, or raw .xml) "
+        "to identify senders that fail both SPF and DKIM."
+    )
+
+    from backend.intel.dmarc_parser import parse_dmarc_report, summarize_dmarc
+
+    _dmarc_file = st.file_uploader(
+        "Upload DMARC report",
+        type=["zip", "gz", "xml"],
+        key="dmarc_uploader_t2",
+    )
+
+    if _dmarc_file is not None:
+        try:
+            _dmarc_bytes = _dmarc_file.getvalue()
+            _dmarc_records = parse_dmarc_report(_dmarc_bytes)
+        except Exception as _e:
+            st.error(f"Failed to parse DMARC report: {_e}")
+            _dmarc_records = []
+
+        if not _dmarc_records:
+            st.warning("No DMARC records found in the uploaded file.")
+        else:
+            _summary = summarize_dmarc(_dmarc_records)
+
+            _c1, _c2, _c3, _c4 = st.columns(4)
+            with _c1:
+                st.metric("Records", _summary.get("record_count", 0))
+            with _c2:
+                st.metric("Total Messages", _summary.get("total_messages", 0))
+            with _c3:
+                st.metric("SPF Fail", _summary.get("spf_fail_count", 0))
+            with _c4:
+                st.metric("Both Fail (SPF + DKIM)", _summary.get("both_fail_count", 0))
+
+            st.markdown("---")
+            st.markdown("#### DMARC Records")
+
+            _df = pd.DataFrame(_dmarc_records)
+
+            def _highlight_both_fail(row):
+                if row.get("both_fail"):
+                    return ["background-color: rgba(226, 75, 74, 0.25)"] * len(row)
+                return [""] * len(row)
+
+            _styled = _df.style.apply(_highlight_both_fail, axis=1)
+            st.dataframe(_styled, width="stretch", hide_index=True)
+
+            st.caption(
+                "Rows highlighted red indicate senders that failed both SPF and DKIM — "
+                "a strong indicator of spoofing or misconfigured infrastructure."
+            )
+    else:
+        st.caption("Awaiting DMARC report upload. Supported formats: .zip, .gz, .xml")
+
+st.markdown("</div>", unsafe_allow_html=True)
 
 
 # ==========================================
@@ -1554,6 +1611,8 @@ with tab5:
             st.error(f"Seed failed: {_e}")
 
     st.markdown("</div>", unsafe_allow_html=True)
+
+
 
 
 # --- GLOBAL LEGAL DISCLAIMER FOOTER ---
