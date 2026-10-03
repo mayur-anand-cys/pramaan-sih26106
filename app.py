@@ -1418,9 +1418,20 @@ with tab5:
         st.info(
             f"**No shared infrastructure across {email_count} analyzed email(s).** "
             "Campaign correlation requires 2 or more emails that share a domain, IP, "
-            "or URL. Upload more emails or run the demo seeder:"
+            "or URL. Upload more emails, or click below to seed a synthetic campaign."
         )
-        st.code("python scripts/seed_demo_campaign.py", language="bash")
+
+    # --- Seed demo campaign button (always visible on Tab 5) ---
+    if st.button("Seed demo campaign", key="seed_demo_btn", use_container_width=True):
+        try:
+            from neo4j_engine import seed_demo_data
+            _seeded = seed_demo_data()
+            if _seeded > 0:
+                st.success(f"Seeded {_seeded} demo email(s). Scroll up to see the campaigns table.")
+            else:
+                st.info("All demo emails already present. Nothing to seed.")
+        except Exception as _e:
+            st.error(f"Seed failed: {_e}")
 
     st.markdown("</div>", unsafe_allow_html=True)
 
