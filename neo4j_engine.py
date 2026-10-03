@@ -306,7 +306,7 @@ def get_campaign_details(campaign_id: str) -> Dict[str, Any]:
 
 def seed_demo_data() -> int:
     """
-    Insert 3 synthetic demo emails sharing 'phish-server.com'.
+    Insert 3 synthetic demo emails sharing 'phish-server.com' plus 1 decoy.
     Idempotent — safe to call repeatedly.
     Returns count of emails ingested.
     """
@@ -339,6 +339,15 @@ def seed_demo_data() -> int:
             "ips": ["203.0.113.12"],
             "urls": ["http://phish-server.com/payroll"],
             "risk_score": 92.0,
+        },
+        {
+            "seed": "demo-004-decoy",
+            "sender": "promo@unrelated-newsletter.org",
+            "return_path": "bounce@unrelated-newsletter.org",
+            "domains": ["unrelated-newsletter.org"],
+            "ips": ["198.51.100.55"],
+            "urls": ["https://unrelated-newsletter.org/subscribe"],
+            "risk_score": 18.0,
         },
     ]
 

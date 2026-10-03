@@ -971,27 +971,72 @@ with tab1:
         </div>
         """, unsafe_allow_html=True)
     
-    # RADIAL THREAT SCORE METER (Center Circle)
+    # RADIAL THREAT SCORE METER (Plotly Gauge - SOC Design System)
     center_col1, center_col2, center_col3 = st.columns([1, 2, 1])
     with center_col2:
-        stroke_dashoffset = int(283 * (1 - (risk_score / 100)))
-        st.markdown(f"""
-        <div style="text-align: center; padding: 15px;">
-            <svg width="200" height="200" viewBox="0 0 100 100">
-                <circle cx="50" cy="50" r="45" fill="none" stroke="#1e293b" stroke-width="8"/>
-                <circle cx="50" cy="50" r="45" fill="none" stroke="{risk_color}" stroke-width="8"
-                        stroke-dasharray="283" stroke-dashoffset="{stroke_dashoffset}"
-                        stroke-linecap="round" transform="rotate(-90 50 50)"/>
-                <text x="50" y="44" font-family="'JetBrains Mono', monospace" font-size="20" font-weight="800" fill="{risk_color}" text-anchor="middle">{risk_score}</text>
-                <text x="50" y="60" font-family="'Inter', sans-serif" font-size="8" font-weight="600" fill="#94a3b8" text-anchor="middle">/ 100 THREAT SCORE</text>
-            </svg>
-            <div style="margin-top: 10px;">
-                <span style="background-color: {risk_color}25; border: 1px solid {risk_color}; color: {risk_color}; padding: 6px 16px; border-radius: 6px; font-weight: 800; font-size: 1rem; font-family: 'JetBrains Mono', monospace;">
+        # Color logic matching SOC design tokens
+        if risk_score >= 65:
+            gauge_color = "#f85149"   # --soc-critical
+        elif risk_score >= 35:
+            gauge_color = "#d29922"   # --soc-medium
+        else:
+            gauge_color = "#3fb950"   # --soc-safe
+
+        gauge_fig = go.Figure(go.Indicator(
+            mode="gauge+number",
+            value=risk_score,
+            number={
+                "font": {"size": 44, "family": "JetBrains Mono, monospace", "color": gauge_color},
+                "suffix": "<span style='font-size:18px;color:#8b949e'> / 100</span>",
+            },
+            gauge={
+                "axis": {
+                    "range": [0, 100],
+                    "tickwidth": 1,
+                    "tickcolor": "#30363d",
+                    "tickfont": {"size": 10, "color": "#6e7681"},
+                    "dtick": 25,
+                },
+                "bar": {"color": gauge_color, "thickness": 0.28},
+                "bgcolor": "#0d1117",
+                "borderwidth": 0,
+                "steps": [
+                    {"range": [0, 35],  "color": "rgba(63,185,80,0.08)"},
+                    {"range": [35, 65], "color": "rgba(210,153,34,0.08)"},
+                    {"range": [65, 100],"color": "rgba(248,81,73,0.08)"},
+                ],
+                "threshold": {
+                    "line": {"color": "#e6edf3", "width": 2},
+                    "thickness": 0.75,
+                    "value": risk_score,
+                },
+            },
+        ))
+
+        gauge_fig.update_layout(
+            height=260,
+            margin={"l": 20, "r": 20, "t": 20, "b": 10},
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            font={"family": "Inter, sans-serif", "color": "#e6edf3"},
+        )
+
+        st.plotly_chart(gauge_fig, use_container_width=True, config={"displayModeBar": False})
+
+        # Verdict badge below gauge
+        badge_color = gauge_color
+        st.markdown(
+            f"""<div style="text-align:center;margin-top:-10px;">
+                <span style="background:{badge_color}22;border:1px solid {badge_color};
+                             color:{badge_color};padding:6px 18px;border-radius:6px;
+                             font-weight:800;font-size:0.95rem;
+                             font-family:'JetBrains Mono',monospace;
+                             letter-spacing:1px;">
                     {risk_level}
                 </span>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+            </div>""",
+            unsafe_allow_html=True,
+        )
 
     st.markdown("---")
     ov_c1, ov_c2 = st.columns(2)
@@ -1305,8 +1350,10 @@ with tab4:
     
     graph_data = graph_engine.build_threat_infrastructure_graph(from_addr, ret_addr, urls, geo_results)
     plotly_fig = graph_engine.generate_plotly_threat_graph(graph_data)
+    st.markdown("<div class='soc-chart-panel'>", unsafe_allow_html=True)
     st.plotly_chart(plotly_fig, width='stretch')
     st.caption(f"Infrastructure Correlation: {graph_data['num_nodes']} Entities, {graph_data['num_edges']} Threat Relationships")
+    st.markdown("</div>", unsafe_allow_html=True)
 
     st.markdown("</div>", unsafe_allow_html=True)
 
@@ -1331,7 +1378,80 @@ with tab5:
                 "asn": g.get("asn")
             })
 
-    if map_data:
+    # --- Relay hop geolocation for ArcLayer ---
+    hop_geo = []
+    if received_headers:
+        _hop_ips = []
+        for _rh in reversed(received_headers):
+            _m = re.search(r"\[([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3})\]", str(_rh))
+            if _m:
+                _hop_ips.append(_m.group(1))
+        for _ip in _hop_ips:
+            _g = geolocate_ip(_ip)
+            if _g.get("status") == "success" and _g.get("lat") and _g.get("lon"):
+                hop_geo.append({
+                    "ip": _ip,
+                    "lat": _g.get("lat"),
+                    "lon": _g.get("lon"),
+                    "city": _g.get("city", "Unknown"),
+                    "country": _g.get("country", "Unknown"),
+                })
+
+    if hop_geo and len(hop_geo) >= 2:
+        # Draw arcs between consecutive hops
+        arcs = []
+        for i in range(len(hop_geo) - 1):
+            arcs.append({
+                "from_lon": hop_geo[i]["lon"],
+                "from_lat": hop_geo[i]["lat"],
+                "to_lon": hop_geo[i + 1]["lon"],
+                "to_lat": hop_geo[i + 1]["lat"],
+                "from_ip": hop_geo[i]["ip"],
+                "to_ip": hop_geo[i + 1]["ip"],
+            })
+
+        arc_layer = pdk.Layer(
+            "ArcLayer",
+            data=arcs,
+            get_source_position="[from_lon, from_lat]",
+            get_target_position="[to_lon, to_lat]",
+            get_source_color=[125, 211, 252, 220],
+            get_target_color=[239, 68, 68, 220],
+            get_width=5,
+            width_min_pixels=2,
+            pickable=True,
+            auto_highlight=True,
+        )
+
+        node_layer = pdk.Layer(
+            "ScatterplotLayer",
+            data=hop_geo,
+            get_position="[lon, lat]",
+            get_color=[125, 211, 252, 230],
+            get_radius=35000,
+            pickable=True,
+            auto_highlight=True,
+        )
+
+        _center_lat = sum(h["lat"] for h in hop_geo) / len(hop_geo)
+        _center_lon = sum(h["lon"] for h in hop_geo) / len(hop_geo)
+
+        st.pydeck_chart(pdk.Deck(
+            layers=[arc_layer, node_layer],
+            initial_view_state=pdk.ViewState(
+                latitude=_center_lat,
+                longitude=_center_lon,
+                zoom=2,
+                pitch=30,
+            ),
+            tooltip={"text": "{ip}\n{from_ip} -> {to_ip}"},
+        ))
+        st.caption(
+            "Relay hops drawn as arcs (blue source -> red target). "
+            "Hops with private / unresolvable IPs are not shown."
+        )
+
+    elif map_data:
         df_map = pd.DataFrame(map_data)
         st.map(df_map, latitude="lat", longitude="lon", zoom=3)
     else:
@@ -1418,9 +1538,20 @@ with tab5:
         st.info(
             f"**No shared infrastructure across {email_count} analyzed email(s).** "
             "Campaign correlation requires 2 or more emails that share a domain, IP, "
-            "or URL. Upload more emails or run the demo seeder:"
+            "or URL. Upload more emails, or click below to seed a synthetic campaign."
         )
-        st.code("python scripts/seed_demo_campaign.py", language="bash")
+
+    # --- Seed demo campaign button (always visible on Tab 5) ---
+    if st.button("Seed demo campaign", key="seed_demo_btn", use_container_width=True):
+        try:
+            from neo4j_engine import seed_demo_data
+            _seeded = seed_demo_data()
+            if _seeded > 0:
+                st.success(f"Seeded {_seeded} demo email(s). Scroll up to see the campaigns table.")
+            else:
+                st.info("All demo emails already present. Nothing to seed.")
+        except Exception as _e:
+            st.error(f"Seed failed: {_e}")
 
     st.markdown("</div>", unsafe_allow_html=True)
 
