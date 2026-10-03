@@ -998,8 +998,8 @@ with tab1:
 
     with ov_c1:
         st.markdown("#### Executive Incident Verdict")
-        st.markdown(f"**ML Phishing Probability**: `<font color='#7dd3fc'><b>{ml_prob * 100:.1f}%</b></font>`", unsafe_allow_html=True)
-        st.markdown(f"**Target EML Hash**: `<code class='mono-font'>{sha256_hash}</code>`", unsafe_allow_html=True)
+        st.markdown(f"**ML Phishing Probability**: <font color='#7dd3fc'><b>{ml_prob * 100:.1f}%</b></font>", unsafe_allow_html=True)
+        st.markdown(f"**Target EML Hash**: <code class='mono-font'>{sha256_hash}</code>", unsafe_allow_html=True)
         st.button(" Copy Hash", key="copy_hash_t1", on_click=lambda: st.write("Copied!"))
 
         st.markdown("##### Key Threat Findings")
@@ -1227,7 +1227,7 @@ with tab3:
     st.markdown("---")
     st.markdown("#### Extracted MIME Headers")
     for k, v in headers_dict.items():
-        st.markdown(f"**{k}**: `<code class='mono-font'>{v}</code>`", unsafe_allow_html=True)
+        st.markdown(f"**{k}**: <code class='mono-font'>{v}</code>", unsafe_allow_html=True)
 
     # -- Body-Embedded Header Spoofing (Issue #23) --
     st.markdown("---")
