@@ -1,5 +1,6 @@
 import streamlit as st
 import os
+import html
 import datetime
 import email
 from email import policy
@@ -997,8 +998,8 @@ with tab1:
 
     with ov_c1:
         st.markdown("#### Executive Incident Verdict")
-        st.markdown(f"**ML Phishing Probability**: `<font color='#7dd3fc'><b>{ml_prob * 100:.1f}%</b></font>`", unsafe_allow_html=True)
-        st.markdown(f"**Target EML Hash**: `<code class='mono-font'>{sha256_hash}</code>`", unsafe_allow_html=True)
+        st.markdown(f'**ML Phishing Probability**: <span style="color:#7dd3fc;font-weight:bold">{html.escape(f"{ml_prob * 100:.1f}%")}</span>', unsafe_allow_html=True)
+        st.markdown(f'**Target EML Hash**: <span style="font-family:monospace">{html.escape(sha256_hash)}</span>', unsafe_allow_html=True)
         st.button(" Copy Hash", key="copy_hash_t1", on_click=lambda: st.write("Copied!"))
 
         st.markdown("##### Key Threat Findings")
@@ -1226,8 +1227,7 @@ with tab3:
     st.markdown("---")
     st.markdown("#### Extracted MIME Headers")
     for k, v in headers_dict.items():
-        st.markdown(f"**{k}**: `<code class='mono-font'>{v}</code>`", unsafe_allow_html=True)
-
+        st.markdown(f'**{html.escape(str(k))}**: <span style="font-family:monospace">{html.escape(str(v))}</span>', unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
 
