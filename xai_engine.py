@@ -4,6 +4,7 @@ from typing import Dict, List, Any, Tuple
 
 # Thread hijacking detection (Issue #22)
 from backend.detection.thread_hijack import detect_thread_hijacking
+from backend.detection.body_header_check import detect_body_header_spoofing
 
 BRAND_KEYWORDS = {
     "paypal": "PayPal Inc.",
@@ -51,6 +52,20 @@ def detect_xai_contradictions(
                 })
     except Exception:
         pass  # never break XAI on hijack errors
+
+        # -- Body-embedded header spoofing (Issue #23) --
+        try:
+            _body_hdr = detect_body_header_spoofing(msg)
+            for mm in _body_hdr.get("mismatches", []):
+                contradictions.append({
+                    "type": f"BODY_HEADER_{mm.get('header', 'UNKNOWN').upper().replace('-', '_')}",
+                    "severity": mm.get("severity", "MEDIUM"),
+                    "field": f"Body/{mm.get('header', '')}",
+                    "explanation": mm.get("explanation", ""),
+                    "detail": mm,
+                })
+        except Exception:
+            pass  # never break XAI on body-header errors
 
     subject = str(msg.get("Subject", "")).lower()
     from_header = str(msg.get("From", "")).lower()

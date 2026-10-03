@@ -22,6 +22,7 @@ import graph_engine
 import neo4j_engine
 from report_gen import generate_pdf_report
 from backend.detection.auth_check import verify_email_auth
+from backend.detection.body_header_check import detect_body_header_spoofing
 from backend.detection.xai import (
     detect_contradictions,
     explain_prediction,
@@ -1227,6 +1228,42 @@ with tab3:
     st.markdown("#### Extracted MIME Headers")
     for k, v in headers_dict.items():
         st.markdown(f"**{k}**: `<code class='mono-font'>{v}</code>`", unsafe_allow_html=True)
+
+    # -- Body-Embedded Header Spoofing (Issue #23) --
+    st.markdown("---")
+    st.markdown("#### Body-Embedded Header Analysis")
+    try:
+        _body_hdr = detect_body_header_spoofing(msg)
+        if _body_hdr.get("embedded_headers_found", 0) == 0 and not _body_hdr.get("mismatches"):
+            st.success("No embedded headers detected in the email body.")
+        else:
+            _col_a, _col_b = st.columns(2)
+            with _col_a:
+                st.metric("Embedded header lines", _body_hdr.get("embedded_headers_found", 0))
+            with _col_b:
+                st.metric(
+                    "Risk modifier",
+                    f"+{_body_hdr.get('total_risk_modifier', 0)}",
+                    delta="Suspicious" if _body_hdr.get("total_risk_modifier", 0) > 0 else None,
+                )
+
+            _mismatches = _body_hdr.get("mismatches", [])
+            if _mismatches:
+                _rows = []
+                for _m in _mismatches:
+                    _rows.append({
+                        "Header": _m.get("header", ""),
+                        "Severity": _m.get("severity", ""),
+                        "Risk": f"+{_m.get('risk_modifier', 0)}",
+                        "MIME value": (_m.get("mime_value", "") or "")[:80],
+                        "Body claim": (_m.get("body_claim", "") or "")[:80],
+                    })
+                st.dataframe(pd.DataFrame(_rows), width='stretch', hide_index=True)
+            else:
+                st.info("Embedded headers found but no mismatches against MIME.")
+    except Exception as _e:
+        st.caption(f"Body-header analysis unavailable: {type(_e).__name__}")
+
 
     st.markdown("</div>", unsafe_allow_html=True)
 
