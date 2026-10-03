@@ -971,27 +971,72 @@ with tab1:
         </div>
         """, unsafe_allow_html=True)
     
-    # RADIAL THREAT SCORE METER (Center Circle)
+    # RADIAL THREAT SCORE METER (Plotly Gauge - SOC Design System)
     center_col1, center_col2, center_col3 = st.columns([1, 2, 1])
     with center_col2:
-        stroke_dashoffset = int(283 * (1 - (risk_score / 100)))
-        st.markdown(f"""
-        <div style="text-align: center; padding: 15px;">
-            <svg width="200" height="200" viewBox="0 0 100 100">
-                <circle cx="50" cy="50" r="45" fill="none" stroke="#1e293b" stroke-width="8"/>
-                <circle cx="50" cy="50" r="45" fill="none" stroke="{risk_color}" stroke-width="8"
-                        stroke-dasharray="283" stroke-dashoffset="{stroke_dashoffset}"
-                        stroke-linecap="round" transform="rotate(-90 50 50)"/>
-                <text x="50" y="44" font-family="'JetBrains Mono', monospace" font-size="20" font-weight="800" fill="{risk_color}" text-anchor="middle">{risk_score}</text>
-                <text x="50" y="60" font-family="'Inter', sans-serif" font-size="8" font-weight="600" fill="#94a3b8" text-anchor="middle">/ 100 THREAT SCORE</text>
-            </svg>
-            <div style="margin-top: 10px;">
-                <span style="background-color: {risk_color}25; border: 1px solid {risk_color}; color: {risk_color}; padding: 6px 16px; border-radius: 6px; font-weight: 800; font-size: 1rem; font-family: 'JetBrains Mono', monospace;">
+        # Color logic matching SOC design tokens
+        if risk_score >= 65:
+            gauge_color = "#f85149"   # --soc-critical
+        elif risk_score >= 35:
+            gauge_color = "#d29922"   # --soc-medium
+        else:
+            gauge_color = "#3fb950"   # --soc-safe
+
+        gauge_fig = go.Figure(go.Indicator(
+            mode="gauge+number",
+            value=risk_score,
+            number={
+                "font": {"size": 44, "family": "JetBrains Mono, monospace", "color": gauge_color},
+                "suffix": "<span style='font-size:18px;color:#8b949e'> / 100</span>",
+            },
+            gauge={
+                "axis": {
+                    "range": [0, 100],
+                    "tickwidth": 1,
+                    "tickcolor": "#30363d",
+                    "tickfont": {"size": 10, "color": "#6e7681"},
+                    "dtick": 25,
+                },
+                "bar": {"color": gauge_color, "thickness": 0.28},
+                "bgcolor": "#0d1117",
+                "borderwidth": 0,
+                "steps": [
+                    {"range": [0, 35],  "color": "rgba(63,185,80,0.08)"},
+                    {"range": [35, 65], "color": "rgba(210,153,34,0.08)"},
+                    {"range": [65, 100],"color": "rgba(248,81,73,0.08)"},
+                ],
+                "threshold": {
+                    "line": {"color": "#e6edf3", "width": 2},
+                    "thickness": 0.75,
+                    "value": risk_score,
+                },
+            },
+        ))
+
+        gauge_fig.update_layout(
+            height=260,
+            margin={"l": 20, "r": 20, "t": 20, "b": 10},
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            font={"family": "Inter, sans-serif", "color": "#e6edf3"},
+        )
+
+        st.plotly_chart(gauge_fig, use_container_width=True, config={"displayModeBar": False})
+
+        # Verdict badge below gauge
+        badge_color = gauge_color
+        st.markdown(
+            f"""<div style="text-align:center;margin-top:-10px;">
+                <span style="background:{badge_color}22;border:1px solid {badge_color};
+                             color:{badge_color};padding:6px 18px;border-radius:6px;
+                             font-weight:800;font-size:0.95rem;
+                             font-family:'JetBrains Mono',monospace;
+                             letter-spacing:1px;">
                     {risk_level}
                 </span>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+            </div>""",
+            unsafe_allow_html=True,
+        )
 
     st.markdown("---")
     ov_c1, ov_c2 = st.columns(2)
