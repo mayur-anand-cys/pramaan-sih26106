@@ -1305,8 +1305,10 @@ with tab4:
     
     graph_data = graph_engine.build_threat_infrastructure_graph(from_addr, ret_addr, urls, geo_results)
     plotly_fig = graph_engine.generate_plotly_threat_graph(graph_data)
+    st.markdown("<div class='soc-chart-panel'>", unsafe_allow_html=True)
     st.plotly_chart(plotly_fig, width='stretch')
     st.caption(f"Infrastructure Correlation: {graph_data['num_nodes']} Entities, {graph_data['num_edges']} Threat Relationships")
+    st.markdown("</div>", unsafe_allow_html=True)
 
     st.markdown("</div>", unsafe_allow_html=True)
 
