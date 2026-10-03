@@ -1331,7 +1331,80 @@ with tab5:
                 "asn": g.get("asn")
             })
 
-    if map_data:
+    # --- Relay hop geolocation for ArcLayer ---
+    hop_geo = []
+    if received_headers:
+        _hop_ips = []
+        for _rh in reversed(received_headers):
+            _m = re.search(r"\[([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3})\]", str(_rh))
+            if _m:
+                _hop_ips.append(_m.group(1))
+        for _ip in _hop_ips:
+            _g = geolocate_ip(_ip)
+            if _g.get("status") == "success" and _g.get("lat") and _g.get("lon"):
+                hop_geo.append({
+                    "ip": _ip,
+                    "lat": _g.get("lat"),
+                    "lon": _g.get("lon"),
+                    "city": _g.get("city", "Unknown"),
+                    "country": _g.get("country", "Unknown"),
+                })
+
+    if hop_geo and len(hop_geo) >= 2:
+        # Draw arcs between consecutive hops
+        arcs = []
+        for i in range(len(hop_geo) - 1):
+            arcs.append({
+                "from_lon": hop_geo[i]["lon"],
+                "from_lat": hop_geo[i]["lat"],
+                "to_lon": hop_geo[i + 1]["lon"],
+                "to_lat": hop_geo[i + 1]["lat"],
+                "from_ip": hop_geo[i]["ip"],
+                "to_ip": hop_geo[i + 1]["ip"],
+            })
+
+        arc_layer = pdk.Layer(
+            "ArcLayer",
+            data=arcs,
+            get_source_position="[from_lon, from_lat]",
+            get_target_position="[to_lon, to_lat]",
+            get_source_color=[125, 211, 252, 220],
+            get_target_color=[239, 68, 68, 220],
+            get_width=5,
+            width_min_pixels=2,
+            pickable=True,
+            auto_highlight=True,
+        )
+
+        node_layer = pdk.Layer(
+            "ScatterplotLayer",
+            data=hop_geo,
+            get_position="[lon, lat]",
+            get_color=[125, 211, 252, 230],
+            get_radius=35000,
+            pickable=True,
+            auto_highlight=True,
+        )
+
+        _center_lat = sum(h["lat"] for h in hop_geo) / len(hop_geo)
+        _center_lon = sum(h["lon"] for h in hop_geo) / len(hop_geo)
+
+        st.pydeck_chart(pdk.Deck(
+            layers=[arc_layer, node_layer],
+            initial_view_state=pdk.ViewState(
+                latitude=_center_lat,
+                longitude=_center_lon,
+                zoom=2,
+                pitch=30,
+            ),
+            tooltip={"text": "{ip}\n{from_ip} -> {to_ip}"},
+        ))
+        st.caption(
+            "Relay hops drawn as arcs (blue source -> red target). "
+            "Hops with private / unresolvable IPs are not shown."
+        )
+
+    elif map_data:
         df_map = pd.DataFrame(map_data)
         st.map(df_map, latitude="lat", longitude="lon", zoom=3)
     else:
