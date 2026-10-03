@@ -697,8 +697,8 @@ for _anomaly in header_forensics.get("header_injection_anomalies", []):
     risk_score = min(100, risk_score + _anomaly["risk_modifier"])
 
     # MITRE ATT&CK enrichment (Issue #44)
-from backend.analytics.attack_map import enrich_risk_factors
-risk_factors = enrich_risk_factors(risk_factors)
+    from backend.analytics.attack_map import enrich_risk_factors
+    risk_factors = enrich_risk_factors(risk_factors)
 
 
 # Email Authentication & XAI Contradiction Analysis
