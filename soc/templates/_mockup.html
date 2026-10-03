@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>PRAMAAN — Analyst Command Center</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap"
+        rel="stylesheet">
+
+    <style>
+        :root {
+            --soc-bg: #0a0e14;
+            --soc-surface: #0d1117;
+            --soc-surface-raised: #161b22;
+            --soc-border: #30363d;
+            --soc-border-muted: #21262d;
+            --soc-text: #e6edf3;
+            --soc-text-muted: #8b949e;
+            --soc-text-subtle: #6e7681;
+            --soc-critical: #f85149;
+            --soc-medium: #d29922;
+            --soc-safe: #3fb950;
+            --soc-info: #58a6ff;
+            --soc-blockchain: #a371f7;
+            --soc-font-body: "Inter", sans-serif;
+            --soc-font-mono: "JetBrains Mono", monospace;
+            --soc-radius: 6px;
+            --soc-radius-sm: 4px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            width: 1440px;
+            height: 900px;
+            overflow: hidden;
+            background: var(--soc-bg);
+            color: var(--soc-text);
+            font-family: var(--soc-font-body);
+            font-size: 13px;
+            line-height: 1.45;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ============================================
+           TOP NAV
+           ============================================ */
+        .topnav {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 22px;
+            border-bottom: 1px solid var(--soc-border);
+            background: var(--soc-surface);
+            flex-shrink: 0;
+        }
+
+        .topnav-left {
+            display: flex;
+            align-items: center;
+            gap: 32px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .brand-mark {
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            background: linear-gradient(135deg, var(--soc-info), var(--soc-blockchain));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 0.85rem;
+            color: var(--soc-bg);
+        }
+
+        .brand-name {
+            font-size: 1.05rem;
+            font-weight: 800;
+            letter-spacing: 1px;
+        }
+
+        .brand-name span {
+            color: var(--soc-info);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 4px;
+        }
+
+        .nav-link {
+            padding: 6px 14px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: var(--soc-text-muted);
+            border-radius: var(--soc-radius-sm);
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .nav-link:hover {
+            color: var(--soc-text);
+            background: var(--soc-surface-raised);
+        }
+
+        .nav-link.active {
+            color: var(--soc-text);
+            background: var(--soc-surface-raised);
+        }
+
+        .topnav-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: var(--soc-safe);
+            padding: 4px 10px;
+            border: 1px solid rgba(63, 185, 80, 0.3);
+            background: rgba(63, 185, 80, 0.08);
+            border-radius: 999px;
+            font-family: var(--soc-font-mono);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-pill::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--soc-safe);
+        }
+
+        .avatar {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--soc-info), var(--soc-blockchain));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.72rem;
+            color: var(--soc-bg);
+        }
+
+        /* Main content wrapper */
+        .main {
+            flex: 1;
+            overflow: hidden;
+            padding: 14px 22px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        /* ============================================
+           KPI STRIP
+           ============================================ */
+        .kpi-strip {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 14px;
+            flex-shrink: 0;
+        }
+
+        .kpi-card {
+            background: var(--soc-surface);
+            border: 1px solid var(--soc-border);
+            border-radius: var(--soc-radius);
+            padding: 10px 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .kpi-label {
+            font-size: 0.68rem;
+            font-weight: 600;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            color: var(--soc-text-subtle);
+        }
+
+        .kpi-value {
+            font-size: 1.7rem;
+            font-weight: 800;
+            font-family: var(--soc-font-mono);
+            color: var(--soc-text);
+            line-height: 1.1;
+            letter-spacing: -1px;
+        }
+
+        .kpi-value.kpi-critical {
+            color: var(--soc-critical);
+        }
+
+        .kpi-suffix {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--soc-text-muted);
+            margin-left: 2px;
+            letter-spacing: 0;
+        }
+
+        .kpi-trend {
+            font-size: 0.72rem;
+            color: var(--soc-text-muted);
+            font-weight: 500;
+        }
+
+        .kpi-trend.kpi-trend-critical {
+            color: var(--soc-critical);
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        /* ============================================
+           PANELS — shared
+           ============================================ */
+        .panel {
+            background: var(--soc-surface);
+            border: 1px solid var(--soc-border);
+            border-radius: var(--soc-radius);
+            padding: 12px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            overflow: hidden;
+        }
+
+        .panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .panel-title {
+            font-size: 0.88rem;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+            color: var(--soc-text);
+        }
+
+        .panel-tag {
+            font-size: 0.65rem;
+            font-weight: 700;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            padding: 3px 8px;
+            border-radius: 4px;
+        }
+
+        .panel-tag-critical {
+            color: var(--soc-critical);
+            background: rgba(248, 81, 73, 0.12);
+            border: 1px solid rgba(248, 81, 73, 0.3);
+        }
+
+        /* Mid grid layout */
+        .mid-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+            flex-shrink: 0;
+        }
+
+        /* Verdict panel */
+        .verdict-text {
+            font-size: 0.85rem;
+            line-height: 1.6;
+            color: var(--soc-text-muted);
+        }
+
+        .verdict-text strong {
+            color: var(--soc-text);
+            font-weight: 700;
+        }
+
+        .verdict-text .mono {
+            font-family: var(--soc-font-mono);
+            font-size: 0.78rem;
+            color: var(--soc-info);
+            background: var(--soc-surface-raised);
+            padding: 1px 5px;
+            border-radius: 3px;
+        }
+
+        .verdict-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: auto;
+        }
+
+        .btn-primary {
+            padding: 8px 16px;
+            background: linear-gradient(90deg, var(--soc-info), var(--soc-blockchain));
+            color: var(--soc-bg);
+            border: none;
+            border-radius: var(--soc-radius-sm);
+            font-weight: 700;
+            font-size: 0.78rem;
+            letter-spacing: 0.3px;
+            cursor: pointer;
+        }
+
+        .btn-ghost {
+            padding: 8px 16px;
+            background: transparent;
+            color: var(--soc-text);
+            border: 1px solid var(--soc-border);
+            border-radius: var(--soc-radius-sm);
+            font-weight: 600;
+            font-size: 0.78rem;
+            cursor: pointer;
+        }
+
+        /* XAI list */
+        .xai-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding: 0;
+            margin: 0;
+        }
+
+        .xai-list li {
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+            padding: 8px 10px;
+            background: var(--soc-surface-raised);
+            border: 1px solid var(--soc-border-muted);
+            border-radius: var(--soc-radius-sm);
+        }
+
+        .xai-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            margin-top: 6px;
+        }
+
+        .xai-dot-critical {
+            background: var(--soc-critical);
+            box-shadow: 0 0 8px rgba(248, 81, 73, 0.6);
+        }
+
+        .xai-dot-medium {
+            background: var(--soc-medium);
+            box-shadow: 0 0 8px rgba(210, 153, 34, 0.6);
+        }
+
+        .xai-title {
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: var(--soc-text);
+            margin-bottom: 2px;
+        }
+
+        .xai-desc {
+            font-size: 0.74rem;
+            color: var(--soc-text-muted);
+            line-height: 1.5;
+        }
+
+        .xai-desc .mono {
+            font-family: var(--soc-font-mono);
+            color: var(--soc-info);
+        }
+
+        .xai-desc strong {
+            color: var(--soc-text);
+        }
+
+        /* ============================================
+           THREAT FACTORS TABLE
+           ============================================ */
+        .panel-tag-mono {
+            color: var(--soc-info);
+            background: rgba(88, 166, 255, 0.1);
+            border: 1px solid rgba(88, 166, 255, 0.3);
+            font-family: var(--soc-font-mono);
+        }
+
+        .panel-tag-info {
+            color: var(--soc-info);
+            background: rgba(88, 166, 255, 0.1);
+            border: 1px solid rgba(88, 166, 255, 0.3);
+        }
+
+        .factors-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.78rem;
+        }
+
+        .factors-table th {
+            text-align: left;
+            font-size: 0.65rem;
+            font-weight: 700;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            color: var(--soc-text-subtle);
+            padding: 6px 0 8px 0;
+            border-bottom: 1px solid var(--soc-border-muted);
+        }
+
+        .factors-table td {
+            padding: 7px 0;
+            border-bottom: 1px solid var(--soc-border-muted);
+            color: var(--soc-text);
+            font-weight: 500;
+        }
+
+        .factors-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .factors-table .ta-right {
+            text-align: right;
+        }
+
+        .factors-table .mono-critical {
+            font-family: var(--soc-font-mono);
+            color: var(--soc-critical);
+            font-weight: 700;
+        }
+
+        .factors-table .mono-medium {
+            font-family: var(--soc-font-mono);
+            color: var(--soc-medium);
+            font-weight: 700;
+        }
+
+        .factors-table .mono-info {
+            font-family: var(--soc-font-mono);
+            color: var(--soc-info);
+            font-weight: 700;
+        }
+
+        .dot {
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+
+        .dot-critical {
+            background: var(--soc-critical);
+        }
+
+        .dot-medium {
+            background: var(--soc-medium);
+        }
+
+        .dot-info {
+            background: var(--soc-info);
+        }
+
+        /* ============================================
+           INFRASTRUCTURE GRAPH
+           ============================================ */
+        .graph-canvas {
+            background: var(--soc-surface-raised);
+            border: 1px solid var(--soc-border-muted);
+            border-radius: var(--soc-radius-sm);
+            padding: 8px;
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .graph-svg {
+            width: 100%;
+            height: 100%;
+            max-height: 190px;
+        }
+
+        .graph-legend {
+            display: flex;
+            gap: 16px;
+            font-size: 0.7rem;
+            color: var(--soc-text-muted);
+            flex-wrap: wrap;
+        }
+
+        .graph-legend span {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .legend-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        /* ============================================
+           ACTION BAR
+           ============================================ */
+        .action-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            padding: 10px 18px;
+            background: var(--soc-surface);
+            border: 1px solid var(--soc-border);
+            border-radius: var(--soc-radius);
+            flex-shrink: 0;
+        }
+
+        .action-left {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .action-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--soc-text);
+        }
+
+        .status-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--soc-safe);
+            box-shadow: 0 0 8px rgba(63, 185, 80, 0.7);
+        }
+
+        .action-meta {
+            font-size: 0.7rem;
+            color: var(--soc-text-subtle);
+        }
+
+        .mono {
+            font-family: var(--soc-font-mono);
+            color: var(--soc-info);
+            font-size: 0.72rem;
+        }
+
+        .action-right {
+            display: flex;
+            gap: 8px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- ============================================
+         TOP NAV
+         ============================================ -->
+    <nav class="topnav">
+        <div class="topnav-left">
+            <div class="brand">
+                <div class="brand-mark">P</div>
+                <div class="brand-name">PRAMAAN<span>.</span></div>
+            </div>
+            <div class="nav-links">
+                <div class="nav-link active">Dashboard</div>
+                <div class="nav-link">Cases</div>
+                <div class="nav-link">Graph</div>
+                <div class="nav-link">Reports</div>
+                <div class="nav-link">Settings</div>
+            </div>
+        </div>
+        <div class="topnav-right">
+            <div class="status-pill">Neo4j Connected</div>
+            <div class="avatar">SN</div>
+        </div>
+    </nav>
+
+    <main class="main">
+        <!-- ============================================
+             KPI STRIP
+             ============================================ -->
+        <section class="kpi-strip">
+            <div class="kpi-card">
+                <div class="kpi-label">Threat Score</div>
+                <div class="kpi-value kpi-critical">94<span class="kpi-suffix">/100</span></div>
+                <div class="kpi-trend kpi-trend-critical">CRITICAL</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">Verdict</div>
+                <div class="kpi-value kpi-critical" style="font-size:1.5rem;">PHISHING</div>
+                <div class="kpi-trend">PayPal Impersonation</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">IOCs Extracted</div>
+                <div class="kpi-value">7</div>
+                <div class="kpi-trend">3 URLs · 4 IPs</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">Auth Failures</div>
+                <div class="kpi-value kpi-critical">3<span class="kpi-suffix">/4</span></div>
+                <div class="kpi-trend kpi-trend-critical">SPF · DKIM · DMARC</div>
+            </div>
+        </section>
+        </section>
+
+        <!-- ============================================
+             EXECUTIVE VERDICT + XAI CONTRADICTIONS
+             ============================================ -->
+        <section class="mid-grid">
+
+            <!-- Executive Verdict -->
+            <div class="panel verdict-panel">
+                <div class="panel-header">
+                    <div class="panel-title">Executive Incident Verdict</div>
+                    <div class="panel-tag panel-tag-critical">CONFIRMED THREAT</div>
+                </div>
+                <p class="verdict-text">
+                    This email is a <strong>PayPal impersonation phishing attempt</strong> targeting
+                    <span class="mono">accounting@nexoraholdings.com</span>. The sender spoofed PayPal's
+                    display name and directed the victim to a credential-harvesting page hosted on
+                    infrastructure registered in <strong>Russia (AS204601)</strong>.
+                    All three cryptographic authentication checks failed, indicating deliberate forgery.
+                </p>
+                <div class="verdict-actions">
+                    <button class="btn-primary">Export Forensic PDF</button>
+                    <button class="btn-ghost">Anchor to Blockchain</button>
+                </div>
+            </div>
+
+            <!-- XAI Contradictions -->
+            <div class="panel xai-panel">
+                <div class="panel-header">
+                    <div class="panel-title">XAI Contradiction Alerts</div>
+                    <div class="panel-tag panel-tag-critical">3 FLAGGED</div>
+                </div>
+                <ul class="xai-list">
+                    <li>
+                        <span class="xai-dot xai-dot-critical"></span>
+                        <div>
+                            <div class="xai-title">Display Name Spoofing</div>
+                            <div class="xai-desc">Sender claims "PayPal" but Return-Path resolves to <span
+                                    class="mono">secure-paypa1[.]ru</span></div>
+                        </div>
+                    </li>
+                    <li>
+                        <span class="xai-dot xai-dot-critical"></span>
+                        <div>
+                            <div class="xai-title">Geographic Anomaly</div>
+                            <div class="xai-desc">Legitimate PayPal mail originates from US/EU. This email's IP is in
+                                <strong>Moscow, RU</strong>.
+                            </div>
+                        </div>
+                    </li>
+                    <li>
+                        <span class="xai-dot xai-dot-medium"></span>
+                        <div>
+                            <div class="xai-title">Urgency Language Mismatch</div>
+                            <div class="xai-desc">Body uses high-urgency phrasing ("account suspended within 24h") —
+                                inconsistent with PayPal's communication style.</div>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+
+        </section>
+        </section>
+
+        <!-- ============================================
+             THREAT FACTORS + INFRASTRUCTURE GRAPH
+             ============================================ -->
+        <section class="mid-grid">
+
+            <!-- Threat Factors -->
+            <div class="panel factors-panel">
+                <div class="panel-header">
+                    <div class="panel-title">Threat Factor Breakdown</div>
+                    <div class="panel-tag panel-tag-mono">WEIGHTED SCORE</div>
+                </div>
+                <table class="factors-table">
+                    <thead>
+                        <tr>
+                            <th>Factor</th>
+                            <th class="ta-right">Weight</th>
+                            <th>Finding</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="dot dot-critical"></span>SPF Authentication Failed</td>
+                            <td class="ta-right mono-critical">+25</td>
+                            <td>Envelope sender not authorized</td>
+                        </tr>
+                        <tr>
+                            <td><span class="dot dot-critical"></span>DMARC Policy Rejected</td>
+                            <td class="ta-right mono-critical">+25</td>
+                            <td>Domain requires alignment — mismatch</td>
+                        </tr>
+                        <tr>
+                            <td><span class="dot dot-critical"></span>Display Name Spoofing</td>
+                            <td class="ta-right mono-critical">+20</td>
+                            <td>"PayPal" claimed, PayPal not sender</td>
+                        </tr>
+                        <tr>
+                            <td><span class="dot dot-medium"></span>Malicious URL Pattern</td>
+                            <td class="ta-right mono-medium">+14</td>
+                            <td>Homoglyph domain (paypa1.ru)</td>
+                        </tr>
+                        <tr>
+                            <td><span class="dot dot-medium"></span>Russia-Hosted Infrastructure</td>
+                            <td class="ta-right mono-medium">+10</td>
+                            <td>AS204601, non-PayPal ASN</td>
+                        </tr>
+                        <tr>
+                            <td><span class="dot dot-info"></span>ML Classifier Confidence</td>
+                            <td class="ta-right mono-info">+14</td>
+                            <td>TF-IDF LogisticRegression: 98.2%</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Infrastructure Graph -->
+            <div class="panel graph-panel">
+                <div class="panel-header">
+                    <div class="panel-title">Threat Infrastructure Graph</div>
+                    <div class="panel-tag panel-tag-info">7 NODES · 9 EDGES</div>
+                </div>
+                <div class="graph-canvas">
+                    <!-- Simple SVG mock of infrastructure graph -->
+                    <svg viewBox="0 0 400 240" class="graph-svg">
+                        <!-- Edges -->
+                        <line x1="100" y1="60" x2="200" y2="120" stroke="#30363d" stroke-width="1" />
+                        <line x1="200" y1="120" x2="320" y2="60" stroke="#30363d" stroke-width="1" />
+                        <line x1="200" y1="120" x2="120" y2="190" stroke="#30363d" stroke-width="1" />
+                        <line x1="200" y1="120" x2="300" y2="190" stroke="#30363d" stroke-width="1" />
+                        <line x1="200" y1="120" x2="200" y2="40" stroke="#f85149" stroke-width="1.5"
+                            stroke-dasharray="4,3" />
+
+                        <!-- Email (center) -->
+                        <circle cx="200" cy="120" r="22" fill="#161b22" stroke="#f85149" stroke-width="2" />
+                        <text x="200" y="118" text-anchor="middle" font-size="9" fill="#f85149"
+                            font-family="JetBrains Mono" font-weight="700">SPOOFED</text>
+                        <text x="200" y="129" text-anchor="middle" font-size="8" fill="#f85149"
+                            font-family="JetBrains Mono">EMAIL</text>
+
+                        <!-- Sender domain -->
+                        <circle cx="100" cy="60" r="16" fill="#161b22" stroke="#58a6ff" stroke-width="1.5" />
+                        <text x="100" y="63" text-anchor="middle" font-size="8" fill="#58a6ff"
+                            font-family="JetBrains Mono">paypa1.ru</text>
+
+                        <!-- Malicious URL -->
+                        <circle cx="320" cy="60" r="16" fill="#161b22" stroke="#f85149" stroke-width="1.5" />
+                        <text x="320" y="63" text-anchor="middle" font-size="8" fill="#f85149"
+                            font-family="JetBrains Mono">hxxp://..</text>
+
+                        <!-- IP 1 -->
+                        <circle cx="120" cy="190" r="16" fill="#161b22" stroke="#f85149" stroke-width="1.5" />
+                        <text x="120" y="193" text-anchor="middle" font-size="8" fill="#f85149"
+                            font-family="JetBrains Mono">45.137...</text>
+
+                        <!-- IP 2 -->
+                        <circle cx="300" cy="190" r="16" fill="#161b22" stroke="#d29922" stroke-width="1.5" />
+                        <text x="300" y="193" text-anchor="middle" font-size="8" fill="#d29922"
+                            font-family="JetBrains Mono">195.24...</text>
+
+                        <!-- Historic campaign node -->
+                        <circle cx="200" cy="40" r="16" fill="#161b22" stroke="#a371f7" stroke-width="1.5" />
+                        <text x="200" y="43" text-anchor="middle" font-size="8" fill="#a371f7"
+                            font-family="JetBrains Mono">CAMPAIGN#7</text>
+                    </svg>
+                </div>
+                <div class="graph-legend">
+                    <span><span class="legend-dot" style="background:#f85149;"></span>Malicious</span>
+                    <span><span class="legend-dot" style="background:#58a6ff;"></span>Domain</span>
+                    <span><span class="legend-dot" style="background:#d29922;"></span>Suspicious</span>
+                    <span><span class="legend-dot" style="background:#a371f7;"></span>Known Campaign</span>
+                </div>
+            </div>
+
+        </section>
+        </section>
+
+        <!-- ============================================
+             ACTION BAR
+             ============================================ -->
+        <section class="action-bar">
+            <div class="action-left">
+                <div class="action-status">
+                    <span class="status-dot"></span>
+                    Case <span class="mono">PRAMAAN-20261003-001</span>
+                </div>
+                <div class="action-meta">
+                    Analyzed in <span class="mono">2.41s</span> · Evidence hash <span class="mono">a3f8...c92d</span>
+                </div>
+            </div>
+            <div class="action-right">
+                <button class="btn-ghost">Archive Case</button>
+                <button class="btn-ghost">Share to SIEM</button>
+                <button class="btn-primary">Export Forensic Bundle</button>
+            </div>
+        </section>
+
+    </main>
+    </main>
+    </main>
+    </main>
+
+</body>
+
+</html>
