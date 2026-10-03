@@ -219,6 +219,12 @@ async def analyze_eml_file(file: UploadFile = File(...)):
             "detail": f"{attachment_analysis['javascript_count']} PDF(s) contain JavaScript",
         })
 
+        
+           # MITRE ATT&CK enrichment (Issue #44)
+    from backend.analytics.attack_map import enrich_risk_factors
+    risk_factors = enrich_risk_factors(risk_factors)
+
+    
     # 7c. XAI Contradiction Detection & SHAP Explanation
 
     ml_result = {

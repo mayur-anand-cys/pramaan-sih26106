@@ -696,6 +696,10 @@ for _anomaly in header_forensics.get("header_injection_anomalies", []):
     })
     risk_score = min(100, risk_score + _anomaly["risk_modifier"])
 
+    # MITRE ATT&CK enrichment (Issue #44)
+    from backend.analytics.attack_map import enrich_risk_factors
+    risk_factors = enrich_risk_factors(risk_factors)
+
 
 # Email Authentication & XAI Contradiction Analysis
 raw_text = raw_bytes.decode('utf-8', errors='replace')
@@ -1040,7 +1044,7 @@ with tab1:
         st.markdown("##### Key Threat Findings")
         if risk_factors:
             for factor in risk_factors:
-                st.markdown(f"• **{factor['category']}** (+{factor['points']} pts): {factor['description']}")
+               st.markdown(f"• **{factor['category']}** `{factor.get('attack_id', '')}` (+{factor['points']} pts): {factor['description']}")
         else:
             st.success("No critical threat factors detected in this email.")
 
