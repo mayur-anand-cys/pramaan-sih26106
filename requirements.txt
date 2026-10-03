@@ -18,3 +18,4 @@ fonttools>=4.50.0
 requests-mock>=1.11.0
 olefile>=0.47
 pypdf>=4.0.0
+jinja2>=3.1.0

@@ -39,6 +39,9 @@ logger = logging.getLogger(__name__)
 # Typosquat & Homoglyph detection (Issue #7)
 from backend.typosquat.detector import detect_domain, get_risk_score_contribution
 
+# SOC sub-app (Issue #75)
+from soc.app import soc_app
+
 app = FastAPI(
     title="PRAMAAN Threat Intelligence & Digital Forensics API",
     description="High-Performance SOC Backend API for Phishing Analysis, Threat Graph Correlation, and ZKFV Evidence Proofs",
@@ -52,6 +55,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Mount SOC sub-app (Issue #75)
+app.mount("/soc", soc_app)
 
 class EMLAnalyzeRequest(BaseModel):
     eml_text: str

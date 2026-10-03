@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block title %}PRAMAAN SOC — Command Center{% endblock %}
+
+{% block content %}
+
+  <div class="soc-card">
+    <h2>System Status</h2>
+    <p class="text-safe">● SOC sub-app is running.</p>
+    <p class="muted">This page is rendered server-side with Jinja2, mounted at <span class="mono">/soc</span>.</p>
+  </div>
+
+  <div class="soc-card">
+    <h2>HTMX Heartbeat</h2>
+    <p class="muted">This panel updates every 2 seconds from <span class="mono">/soc/panels/hello</span>.</p>
+    <div hx-get="/soc/panels/hello"
+         hx-trigger="load, every 2s"
+         hx-swap="innerHTML">
+      <p class="muted">Loading…</p>
+    </div>
+  </div>
+
+{% endblock %}

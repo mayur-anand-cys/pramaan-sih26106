@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}{{ title or "PRAMAAN SOC" }}{% endblock %}</title>
+
+  <link rel="stylesheet" href="/soc/static/css/pramaan-soc.css">
+
+  <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+  <style>
+    body {
+      margin: 0;
+      background: #0a0e14;
+      color: #e6edf3;
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    header.soc-header {
+      border-bottom: 1px solid #30363d;
+      padding: 12px 20px;
+      background: #0d1117;
+    }
+    header.soc-header h1 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+    main.soc-main {
+      padding: 20px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    .soc-card {
+      border: 1px solid #30363d;
+      background: #0d1117;
+      border-radius: 6px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    .soc-card h2 {
+      margin: 0 0 12px 0;
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #8b949e;
+    }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .muted { color: #8b949e; }
+    .text-critical { color: #f85149; }
+    .text-medium   { color: #d29922; }
+    .text-safe     { color: #3fb950; }
+    .text-info     { color: #58a6ff; }
+  </style>
+</head>
+<body>
+  <header class="soc-header">
+    <h1>PRAMAAN SOC — Analyst Command Center</h1>
+  </header>
+
+  <main class="soc-main">
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>
