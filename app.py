@@ -985,21 +985,21 @@ verify_file = st.file_uploader(
 )
 
 if verify_file is not None:
-    verify_bytes = verify_file.getvalue()
-    if st.button(" Verify Cryptographic Proof", width='stretch'):
-        is_valid, curr_root, exp_root = zkvf.verify_evidence_proof(verify_bytes, zkvf_proof)
+    if st.button("Verify Cryptographic Proof", width='stretch'):
+        is_valid, curr_root, exp_root = zkfv.verify_evidence_proof(verify_bytes, zkfv_proof)
         if is_valid:
             st.success(" **Evidence Integrity Verified**: Merkle root matches cryptographic proof!")
         else:
             st.error(" **Verification Failed**: Proof mismatch!")
             st.write(f"**Expected root:** `{exp_root}`")
             st.write(f"**Uploaded file root:** `{curr_root}`")
-    with st.expander(" View Forensic Audit Ledger", expanded=False):
-        audit_logs = zkfv.get_recent_audit_logs(10)
-        if audit_logs:
-            st.dataframe(pd.DataFrame(audit_logs), width='stretch', hide_index=True)
-        else:
-            st.caption("No audit log entries recorded yet.")
+
+with st.expander(" View Forensic Audit Ledger", expanded=False):
+    audit_logs = zkfv.get_recent_audit_logs(10)
+    if audit_logs:
+        st.dataframe(pd.DataFrame(audit_logs), width='stretch', hide_index=True)
+    else:
+        st.caption("No audit log entries recorded yet.")
 
     st.markdown("</div>", unsafe_allow_html=True)
 
