@@ -340,3 +340,28 @@ kbd {
     overflow-x: auto;
   }
 }
+/* --- Streamlit Target Overrides --- */
+[data-testid="stAppViewContainer"] {
+    background: var(--soc-bg) !important;
+}
+
+[data-testid="stSidebar"] {
+    background-color: var(--soc-card-bg) !important;
+    border-right: 1px solid var(--soc-border) !important;
+}
+
+.stTabs [data-baseweb="tab"] {
+    font-family: var(--soc-font-body) !important;
+    background-color: var(--soc-card-bg) !important;
+    border: 1px solid var(--soc-border) !important;
+}
+
+.stTabs [aria-selected="true"] {
+    background-color: var(--soc-accent) !important;
+    color: #fff !important;
+}
+
+.stButton button {
+    background-color: var(--soc-accent) !important;
+    color: #fff !important;
+}
