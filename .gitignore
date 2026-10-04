@@ -36,3 +36,8 @@ Docker Desktop Installer.exe
 backend/auth/users.db
 Docker Desktop Installer.exe
 *.exe
+.env
+*.bak
+*.py.bak
+app_OG.py
+final.py

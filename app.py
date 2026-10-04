@@ -37,7 +37,7 @@ st.set_page_config(
     page_title="PRAMAAN | SOC Threat Intelligence & Digital Forensics",
     page_icon="",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="collapsed"
 )
 from pathlib import Path
 css_path = Path(__file__).parent / "soc" / "static" / "css" / "pramaan-soc.css"
@@ -372,27 +372,36 @@ def calculate_risk_score(
 
 # --- Sidebar ---
 with st.sidebar:
-    st.markdown("### SOC Data Source")
-    use_sample = st.checkbox(" Use Sample Phishing EML", value=False)
-    uploaded_file = st.file_uploader("Upload .eml File", type=["eml"])
-
-    st.markdown("---")
     if _user:
-        st.caption(f"Signed in as **{_user.get('username', 'unknown')}** ({_role})")
-    if st.button("Sign out", width='stretch'):
-        auth_logout()
-        st.rerun()
-
+        _sb_uname = _user.get("username", "unknown")
+        _sb_initial = _sb_uname[0].upper() if _sb_uname else "U"
+        st.markdown(
+            '<div style="display:inline-flex; align-items:center; gap:10px; '
+            'background: rgba(6,182,212,0.08); '
+            'border: 1px solid rgba(6,182,212,0.30); '
+            'border-radius: 999px; '
+            'padding: 6px 16px 6px 6px; '
+            "font-family: 'JetBrains Mono', monospace; "
+            'font-size: 0.85rem; color: #22D3EE; margin-bottom: 16px;">'
+            '<span style="width:26px; height:26px; border-radius:50%; '
+            'background: linear-gradient(135deg, #3b82f6, #2563EB); '
+            'display:flex; align-items:center; justify-content:center; '
+            'color:#fff; font-weight:800; font-size:0.72rem;">' + _sb_initial + '</span>'
+            '<span>' + _sb_uname.upper() + '</span>'
+            '</div>',
+            unsafe_allow_html=True,
+        )
+    st.markdown('<div class="sidebar-nav-title">NAVIGATION</div>', unsafe_allow_html=True)
 # Role-based theming — solid colors per SOC design system (#102)
 # No gradients, no shadows. Color = meaning only.
 if _role == "analyst":
-    bg_gradient = "#0a0e14"
-    card_bg = "#0d1117"
-    card_border = "#30363d"
+    bg_gradient = "#070D14"
+    card_bg = "#0F172A"
+    card_border = "rgba(6, 182, 212, 0.15)"
 else:
-    bg_gradient = "#0a0e14"
-    card_bg = "#0d1117"
-    card_border = "#30363d"
+    bg_gradient = "#070D14"
+    card_bg = "#0F172A"
+    card_border = "rgba(6, 182, 212, 0.15)"
 
 st.markdown(f"""
     <style>
@@ -409,8 +418,8 @@ st.markdown(f"""
     }}
 
     [data-testid="stSidebar"] {{
-        background-color: #0d1117 !important;
-        border-right: 1px solid #1e293b !important;
+        background-color: #0F172A !important;
+        border-right: 1px solid rgba(6, 182, 212, 0.20) !important;
     }}
 
     .mono-font, code, pre, .stCodeBlock, [data-testid="stTextInput"] input {{
@@ -427,9 +436,9 @@ st.markdown(f"""
     }}
 
     .badge-pass {{
-        background-color: rgba(61, 220, 151, 0.15);
-        color: #3ddc97;
-        border: 1px solid #3ddc97;
+        background-color: rgba(16, 185, 129, 0.15);
+        color: #10B981;
+        border: 1px solid #10B981;
         padding: 4px 12px;
         border-radius: 4px;
         font-weight: 700;
@@ -438,9 +447,9 @@ st.markdown(f"""
     }}
 
     .badge-fail {{
-        background-color: rgba(226, 75, 74, 0.15);
-        color: #e24b4a;
-        border: 1px solid #e24b4a;
+        background-color: rgba(244, 63, 94, 0.15);
+        color: #F43F5E;
+        border: 1px solid #F43F5E;
         padding: 4px 12px;
         border-radius: 4px;
         font-weight: 700;
@@ -449,9 +458,9 @@ st.markdown(f"""
     }}
 
     .badge-warn {{
-        background-color: rgba(251, 191, 109, 0.15);
-        color: #fbbf6d;
-        border: 1px solid #fbbf6d;
+        background-color: rgba(245, 158, 11, 0.15);
+        color: #F59E0B;
+        border: 1px solid #F59E0B;
         padding: 4px 12px;
         border-radius: 4px;
         font-weight: 700;
@@ -467,7 +476,7 @@ st.markdown(f"""
     .stTabs [data-baseweb="tab-list"] {{
         gap: 12px;
         background-color: transparent;
-        border-bottom: 2px solid #1e293b;
+        border-bottom: 2px solid rgba(6, 182, 212, 0.20);
     }}
 
     .stTabs [data-baseweb="tab"] {{
@@ -481,9 +490,9 @@ st.markdown(f"""
     }}
 
     .stTabs [aria-selected="true"] {{
-        background-color: #1e293b !important;
-        color: #7dd3fc !important;
-        border-top: 3px solid #7dd3fc !important;
+        background-color: rgba(6, 182, 212, 0.20) !important;
+        color: #06B6D4 !important;
+        border-top: 3px solid #06B6D4 !important;
     }}
     
     /* --- pramaan-soc.css --- */
@@ -496,13 +505,13 @@ st.markdown(f"""
 .stTabs [data-baseweb="tab-list"] {{
     gap: 8px;
     background-color: transparent;
-    border-bottom: 1px solid #1e293b;
+    border-bottom: 1px solid rgba(6, 182, 212, 0.20);
     padding-bottom: 6px;
 }}
 
 .stTabs [data-baseweb="tab"] {{
-    background-color: #121926;
-    border: 1px solid #1e293b;
+    background-color: #16213B;
+    border: 1px solid rgba(6, 182, 212, 0.20);
     border-radius: 6px 6px 0 0;
     color: #94a3b8;
     padding: 10px 20px;
@@ -512,33 +521,33 @@ st.markdown(f"""
 }}
 
 .stTabs [data-baseweb="tab"]:hover {{
-    border-color: #7dd3fc;
-    color: #bae6fd;
+    border-color: #06B6D4;
+    color: #22D3EE;
 }}
 
 .stTabs [aria-selected="true"] {{
-    background-color: #1e293b !important;
-    color: #7dd3fc !important;
-    border: 1px solid #7dd3fc !important;
-    border-bottom: 1px solid #1e293b !important;
-    box-shadow: 0 -2px 0 #7dd3fc inset;
+    background-color: rgba(6, 182, 212, 0.20) !important;
+    color: #06B6D4 !important;
+    border: 1px solid #06B6D4 !important;
+    border-bottom: 1px solid rgba(6, 182, 212, 0.20) !important;
+    box-shadow: 0 -2px 0 #06B6D4 inset;
 }}
 
 /* --- Chart panel: bordered container for analytical charts --- */
 .soc-chart-panel {{
-    background-color: #121926;
-    border: 1px solid #334155;
-    border-radius: 8px;
+    background-color: rgba(15, 23, 42, 0.4);
+    border: 1px solid rgba(6, 182, 212, 0.30);
+    border-radius: 10px;
     padding: 16px;
     margin-top: 8px;
     margin-bottom: 20px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
 }}
 
 /* --- Top header card --- */
 .soc-header {{
-    background-color: #121926;
-    border: 1px solid #1e293b;
+    background-color: #16213B;
+    border: 1px solid rgba(6, 182, 212, 0.20);
     border-radius: 8px;
     padding: 12px 16px;
     margin-bottom: 16px;
@@ -567,21 +576,21 @@ st.markdown(f"""
 }}
 
 .soc-status-ok {{
-    background-color: rgba(61, 220, 151, 0.12);
-    color: #3ddc97;
-    border-color: #3ddc97;
+    background-color: rgba(16, 185, 129, 0.12);
+    color: #10B981;
+    border-color: #10B981;
 }}
 
 .soc-status-bad {{
-    background-color: rgba(226, 75, 74, 0.12);
-    color: #e24b4a;
-    border-color: #e24b4a;
+    background-color: rgba(244, 63, 94, 0.12);
+    color: #F43F5E;
+    border-color: #F43F5E;
 }}
 
 .soc-status-warn {{
-    background-color: rgba(251, 191, 109, 0.12);
-    color: #fbbf6d;
-    border-color: #fbbf6d;
+    background-color: rgba(245, 158, 11, 0.12);
+    color: #F59E0B;
+    border-color: #F59E0B;
 }}
 
 .soc-status-dot {{
@@ -598,8 +607,8 @@ st.markdown(f"""
     align-items: center;
     gap: 8px;
     padding: 6px 12px;
-    background-color: #1e293b;
-    border: 1px solid #334155;
+    background-color: rgba(6, 182, 212, 0.20);
+    border: 1px solid rgba(6, 182, 212, 0.30);
     border-radius: 6px;
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.8rem;
@@ -607,17 +616,27 @@ st.markdown(f"""
 }}
 
 .soc-user-role {{
-    color: #7dd3fc;
+    color: #06B6D4;
     font-weight: 700;
     text-transform: uppercase;
     font-size: 0.7rem;
     letter-spacing: 0.05em;
 }}
+    .soc-card-blue {{
+        background: transparent !important;
+        border: 1px solid rgba(96,180,255,0.20) !important;
+        border-radius: 14px !important;
+        box-shadow: none !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+        padding: 24px 32px 20px 32px;
+        margin-bottom: 20px;
+    }}
 
 /* --- Search bar --- */
 .soc-search input {{
-    background-color: #0d1117 !important;
-    border: 1px solid #1e293b !important;
+    background-color: #0F172A !important;
+    border: 1px solid rgba(6, 182, 212, 0.20) !important;
     color: #e2e8f0 !important;
     border-radius: 6px !important;
     font-family: 'JetBrains Mono', monospace !important;
@@ -625,52 +644,397 @@ st.markdown(f"""
 }}
 
 .soc-search input:focus {{
-    border-color: #7dd3fc !important;
-    box-shadow: 0 0 0 2px rgba(125, 211, 252, 0.2) !important;
+    border-color: #06B6D4 !important;
+    box-shadow: 0 0 0 2px rgba(6,182,212,0.2) !important;
 }}
+    [data-testid="stSidebar"] [role="radiogroup"] {{ display: flex; flex-direction: column; gap: 6px; }}
+    [data-testid="stSidebar"] [role="radiogroup"] label {{ background-color: #16213B; border: 1px solid rgba(6, 182, 212, 0.20); border-radius: 6px; color: #94a3b8; padding: 10px 14px; font-weight: 600; font-family: 'Inter', sans-serif; font-size: 0.85rem; cursor: pointer; transition: border-color 0.15s ease, color 0.15s ease; }}
+    [data-testid="stSidebar"] [role="radiogroup"] label:hover {{ border-color: #06B6D4; color: #22D3EE; }}
+    [data-testid="stSidebar"] [role="radiogroup"] label:has(input:checked) {{ background-color: rgba(6, 182, 212, 0.20) !important; color: #06B6D4 !important; border: 1px solid #06B6D4 !important; box-shadow: -3px 0 0 #06B6D4 inset; }}
+    [data-testid="stSidebar"] [role="radiogroup"] label > div:first-child {{ display: none; }}
+    [data-testid="stSidebar"] .sidebar-nav-title {{ color: #06B6D4; font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; margin: 8px 0 12px; }}
+    .findings-wrap {{ width: 100%; display: flex; flex-direction: column; gap: 8px; }}
+    .finding-row {{ display: flex; align-items: center; gap: 14px; padding: 10px 14px; background: rgba(255,255,255,0.03); border-left: 3px solid #06B6D4; border-radius: 6px; }}
+    .finding-row:hover {{ background: rgba(125,211,252,0.08); }}
+    .finding-cat {{ font-family: 'Inter', sans-serif; font-weight: 700; font-size: 0.82rem; color: #06B6D4; white-space: nowrap; min-width: 150px; }}
+    .finding-pts {{ font-family: 'JetBrains Mono', monospace; font-weight: 600; font-size: 0.8rem; color: #F59E0B; white-space: nowrap; background: rgba(245,158,11,0.10); padding: 3px 10px; border-radius: 4px; }}
+    .finding-desc {{ font-family: 'Inter', sans-serif; font-size: 0.88rem; line-height: 1.4; color: #e2e8f0; flex: 1; }}
+    /* Screenshot-matched full-width dashboard presentation */
+    [data-testid="stAppViewContainer"] > .main .block-container {{ max-width: 100% !important; padding: 0.75rem 1.2rem 1rem !important; }}
+    .dashboard-topbar {{ display:flex; align-items:center; gap:14px; background:#0F172A; border:1px solid rgba(6, 182, 212, 0.20); border-radius:8px; padding:8px 14px; margin-bottom:10px; }}
+    .dashboard-brand {{ display:flex; align-items:center; gap:8px; color:#f8fafc; font-size:0.92rem; font-weight:800; letter-spacing:0.02em; white-space:nowrap; }}
+    .dashboard-brand-icon {{ width:22px; height:22px; border-radius:5px; background:linear-gradient(135deg,#22D3EE,#3B82F6); display:inline-flex; align-items:center; justify-content:center; color:#e0f2fe; font-size:0.72rem; }}
+    .dashboard-search input {{ background:#16213B !important; border:1px solid rgba(6, 182, 212, 0.30) !important; border-radius:999px !important; color:#94a3b8 !important; font-size:0.72rem !important; height:30px !important; }}
+    .dashboard-alerts {{ color:#f8fafc; font-size:0.72rem; font-weight:700; white-space:nowrap; }}
+    .dashboard-user {{ color:#e2e8f0; font-size:0.72rem; font-weight:700; text-align:right; white-space:nowrap; }}
+    .dashboard-user small {{ color:#94a3b8; font-family:'JetBrains Mono',monospace; font-size:0.62rem; }}
+    .dashboard-status-row {{ display:flex; justify-content:center; gap:8px; margin:-2px 0 8px; }}
+    .dashboard-status-row .soc-status-pill {{ font-size:0.62rem; padding:3px 9px; }}
+    .stTabs {{ margin-top:0 !important; }}
+    .stTabs [data-baseweb="tab-list"] {{ gap:0 !important; border-bottom:1px solid rgba(6, 182, 212, 0.30) !important; }}
+    .stTabs [data-baseweb="tab"] {{ font-size:0.68rem !important; padding:7px 12px !important; }}
     </style>
 """, unsafe_allow_html=True)
 
-
 # --- UPLOAD FLOW HANDLING ---
-raw_bytes = None
-file_name = ""
+if "raw_bytes" not in st.session_state:
+    st.session_state["raw_bytes"] = None
+    st.session_state["file_name"] = ""
 
-if use_sample:
-    sample_path = Path(__file__).parent / "gmail.eml"
-    if sample_path.exists():
-        raw_bytes = sample_path.read_bytes()
-        file_name = "gmail.eml"
-    else:
-        st.error("gmail.eml file not found in repository.")
-elif uploaded_file is not None:
-    raw_bytes = uploaded_file.getvalue()
-    file_name = uploaded_file.name
-
+raw_bytes = st.session_state["raw_bytes"]
+file_name = st.session_state["file_name"]
 
 # --- LANDING PAGE (Pre-Upload) ---
 if raw_bytes is None:
-    st.markdown("<div style='margin-top: 40px;'></div>", unsafe_allow_html=True)
-    
+
+    st.markdown("""
+    <style>
+    @keyframes pramaan-page-in {
+        0% {
+            opacity: 0;
+            transform: translateY(12px);
+        }
+        100% {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    html, body, [data-testid="stAppViewContainer"] {
+        animation: pramaan-page-in 700ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    /* Individual elements stagger in slightly for a premium feel */
+    div[data-testid="stVerticalBlockBorderWrapper"] {
+        animation: pramaan-page-in 700ms cubic-bezier(0.22, 1, 0.36, 1) 100ms backwards;
+    }
+
+    .landing-col1, .landing-col2, .landing-col3 {
+        animation: pramaan-page-in 700ms cubic-bezier(0.22, 1, 0.36, 1) 200ms backwards;
+    }
+    section[data-testid="stSidebar"] {
+        display: none !important;
+        visibility: hidden !important;
+        width: 0 !important;
+    }
+    [data-testid="collapsedControl"],
+    [data-testid="stSidebarCollapsedControl"],
+    [data-testid="stSidebarNav"] {
+        display: none !important;
+    }
+    html, body {
+        height: 100vh !important;
+        overflow: hidden !important;
+    }
+    html, body, [data-testid="stAppViewContainer"] {
+        background: radial-gradient(ellipse at 50% 40%,
+            #0c2b52 0%, #0a1e3d 25%, #071428 55%, #030a18 100%) !important;
+        background-attachment: fixed !important;
+    }
+    [data-testid="stAppViewContainer"] > .main,
+    [data-testid="stMain"],
+    .block-container {
+        height: 100vh !important;
+        overflow: hidden !important;
+        padding-top: 0 !important;
+        padding-bottom: 0 !important;
+    }
+    ::-webkit-scrollbar { display: none !important; }
+    [data-testid="stAppViewContainer"]::-webkit-scrollbar { display: none !important; }
+    [data-testid="stAppDeployButton"], .stAppDeployButton { display: none !important; }
+
+    .circuit-overlay {
+        position: fixed; inset: 0; pointer-events: none; z-index: 0;
+        background-image:
+            linear-gradient(rgba(96,180,255,0.18) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(96,180,255,0.18) 1px, transparent 1px);
+        background-size: 52px 52px;
+        mask-image: radial-gradient(circle at 50% 30%, black 0%, transparent 78%);
+        -webkit-mask-image: radial-gradient(circle at 50% 30%, black 0%, transparent 78%);
+        animation: gridDrift 30s linear infinite, gridPulse 6s ease-in-out infinite;
+    }
+    @keyframes gridDrift {
+        0%   { background-position: 0px 0px, 0px 0px; }
+        100% { background-position: 52px 52px, 52px 52px; }
+    }
+    @keyframes gridPulse {
+        0%, 100% { opacity: 0.55; }
+        50%      { opacity: 1; }
+    }
+
+    .landing-stars { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+    .star {
+        position: absolute; width: 2px; height: 2px; border-radius: 50%;
+        background: #bae6fd; opacity: 0.5;
+        box-shadow: 0 0 6px rgba(186,230,253,0.8);
+        animation: twinkle 3.2s ease-in-out infinite;
+    }
+    @keyframes twinkle {
+        0%, 100% { opacity: 0.15; transform: scale(1); }
+        50%      { opacity: 1;    transform: scale(1.6); }
+    }
+
+    div[data-testid="stVerticalBlockBorderWrapper"] {
+        background: linear-gradient(160deg, rgba(6,182,212,0.10) 0%, rgba(15,23,42,0.60) 100%) !important;
+        border: 1px solid rgba(6,182,212,0.35) !important;
+        border-radius: 14px !important;
+        box-shadow: 0 12px 40px rgba(0,0,0,0.4), inset 0 1px 0 rgba(150,210,255,0.25) !important;
+        padding: 4px 6px !important;
+    }
+
+    .landing-shield-wrap {
+        position: relative; width: 72px; height: 72px;
+        margin: 0 auto 2px auto;
+        display: flex; align-items: center; justify-content: center;
+    }
+    .landing-shield-glow {
+        position: absolute; width: 72px; height: 72px; border-radius: 50%;
+        background: radial-gradient(circle, rgba(56,189,248,0.30) 0%, rgba(20,80,110,0.16) 45%, rgba(0,0,0,0) 72%);
+        z-index: 0;
+        animation: shieldBreathe 4s ease-in-out infinite;
+    }
+    @keyframes shieldBreathe {
+        0%, 100% { transform: scale(1); opacity: 0.85; }
+        50%      { transform: scale(1.08); opacity: 1; }
+    }
+    .landing-shield {
+        width: 52px; height: 52px;
+        position: relative; z-index: 1;
+        filter: drop-shadow(0 0 18px rgba(56,189,248,0.65));
+    }
+    .trust-badge {
+        display: inline-block;
+        background: rgba(96,180,255,0.18);
+        border: 1px solid rgba(96,180,255,0.55);
+        color: #d4eeff;
+        padding: 4px 11px; border-radius: 20px;
+        font-size: 0.68rem; font-weight: 700; letter-spacing: 0.04em;
+        margin: 0 4px 6px 4px;
+        font-family: 'JetBrains Mono', monospace;
+    }
+    .soc-footer {
+        position: fixed; bottom: 12px; right: 20px;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.72rem; color: #64748b;
+        background: rgba(5, 15, 28, 0.7);
+        border: 1px solid rgba(56,189,248,0.15);
+        padding: 6px 12px; border-radius: 6px;
+        z-index: 100;
+        display: flex; align-items: center; gap: 8px;
+    }
+    .soc-footer .pulse-dot {
+        width: 7px; height: 7px; border-radius: 50%;
+        background: #10B981; box-shadow: 0 0 8px #10B981;
+        animation: pulse-green 2s ease-in-out infinite;
+    }
+    @keyframes pulse-green {
+        0%, 100% { opacity: 1; }
+        50%      { opacity: 0.4; }
+    }
+
+    .pramaan-title {
+        font-size: 1.35rem !important;
+        font-weight: 800;
+        color: #f8fafc;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        margin-top: 2px;
+        line-height: 1.15;
+    }
+    .pramaan-sub {
+        font-size: 0.82rem !important;
+        color: #7dd3fc;
+        margin-top: 2px;
+        margin-bottom: 10px;
+        font-weight: 600;
+    }
+    .pramaan-desc {
+        font-size: 0.78rem !important;
+        color: #94A3B8;
+        margin-top: 8px;
+        margin-bottom: 2px;
+        line-height: 1.5;
+    }
+
+    /* ---- Aurora orbs ---- */
+    .orb {
+        position: fixed;
+        border-radius: 50%;
+        filter: blur(90px);
+        opacity: 0.40;
+        animation: orb-drift 24s ease-in-out infinite;
+        pointer-events: none;
+        z-index: 0;
+    }
+    .orb.o1 { width: 520px; height: 520px; background: #58a6ff; top: -15%; left: -10%; }
+    .orb.o2 { width: 440px; height: 440px; background: #a371f7; bottom: -18%; left: 35%; animation-duration: 30s; animation-delay: -4s; }
+    .orb.o3 { width: 400px; height: 400px; background: #3fb950; top: 40%; right: -12%; animation-duration: 36s; animation-delay: -10s; opacity: 0.22; }
+    @keyframes orb-drift {
+        0%, 100% { transform: translate(0, 0) scale(1); }
+        33%      { transform: translate(60px, -40px) scale(1.08); }
+        66%      { transform: translate(-50px, 50px) scale(0.94); }
+    }
+
+    /* ---- Floating particles ---- */
+    .particle {
+        position: fixed;
+        width: 3px; height: 3px;
+        border-radius: 50%;
+        background: #58a6ff;
+        box-shadow: 0 0 10px 2px rgba(88,166,255,0.7);
+        animation: float-up 20s linear infinite;
+        opacity: 0;
+        pointer-events: none;
+        z-index: 1;
+    }
+    .particle.p1 { left: 10%; animation-delay: 0s; }
+    .particle.p2 { left: 25%; animation-delay: 4s; background: #a371f7; box-shadow: 0 0 10px 2px rgba(163,113,247,0.7); }
+    .particle.p3 { left: 45%; animation-delay: 8s; }
+    .particle.p4 { left: 62%; animation-delay: 2s; background: #3fb950; box-shadow: 0 0 10px 2px rgba(63,185,80,0.7); }
+    .particle.p5 { left: 78%; animation-delay: 6s; }
+    .particle.p6 { left: 92%; animation-delay: 10s; background: #a371f7; box-shadow: 0 0 10px 2px rgba(163,113,247,0.7); }
+    @keyframes float-up {
+        0%   { top: 100%; opacity: 0; }
+        10%  { opacity: 0.9; }
+        90%  { opacity: 0.9; }
+        100% { top: -5%; opacity: 0; }
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+    st.markdown("""
+    <div class='circuit-overlay'></div>
+    <div class='orb o1'></div>
+    <div class='orb o2'></div>
+    <div class='orb o3'></div>
+    <div class='particle p1'></div>
+    <div class='particle p2'></div>
+    <div class='particle p3'></div>
+    <div class='particle p4'></div>
+    <div class='particle p5'></div>
+    <div class='particle p6'></div>
+    """, unsafe_allow_html=True)
+
+    star_positions = [
+        (4, 10, 0.0), (8, 22, 0.3), (12, 78, 0.6), (16, 45, 0.9), (20, 62, 1.2),
+        (24, 34, 0.5), (28, 88, 0.8), (32, 15, 1.1), (36, 72, 0.2), (40, 8, 0.7),
+        (44, 55, 1.4), (48, 40, 0.4), (52, 92, 1.0), (56, 25, 0.6), (60, 68, 1.3),
+        (64, 48, 0.1), (68, 85, 0.9), (72, 12, 0.5), (76, 58, 1.2), (80, 30, 0.3),
+        (84, 75, 0.8), (88, 42, 1.1), (92, 20, 0.2), (96, 65, 0.7),
+    ]
+    stars_html = "<div class='landing-stars'>"
+    for top, left, delay in star_positions:
+        stars_html += f"<span class='star' style='top:{top}%; left:{left}%; animation-delay:{delay}s;'></span>"
+    stars_html += "</div>"
+    st.markdown(stars_html, unsafe_allow_html=True)
+
+    st.markdown(f"""
+    <div class="soc-footer">
+        <span class="pulse-dot"></span>
+        SOC Active · Pipeline Ready · {datetime.datetime.now().strftime('%H:%M:%S')}
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown("<div style='margin-top: 0px;'></div>", unsafe_allow_html=True)
+
     landing_col1, landing_col2, landing_col3 = st.columns([1, 2, 1])
     with landing_col2:
         st.markdown("""
-        <div class='soc-card' style='text-align: center; padding: 40px;'>
-            <div style='font-size: 3rem; margin-bottom: 10px;'></div>
-            <div style='font-size: 2rem; font-weight: 800; color: #f8fafc; letter-spacing: -0.5px;'>PRAMAAN Threat Intelligence</div>
-            <div style='font-size: 1rem; color: #7dd3fc; margin-bottom: 24px;'>AI-Powered Digital Forensics & Phishing Incident Response Engine</div>
-            <div style='font-size: 0.9rem; color: #94a3b8; margin-bottom: 30px;'>
-                Upload an <code>.eml</code> email file below or check the sample option to launch the 5-Tab SOC Forensic Inspection Dashboard.
+            <div class='soc-card-blue' style='text-align: center; padding: 14px 26px 14px 26px;'>
+            <div class='landing-shield-wrap'>
+                <div class='landing-shield-glow'></div>
+                <svg class='landing-shield' viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M50 6 L86 20 V48 C86 72 71 88 50 96 C29 88 14 72 14 48 V20 Z"
+                          stroke="#7dd3fc" stroke-width="3" fill="rgba(56,189,248,0.10)"/>
+                    <path d="M50 14 L78 25 V48 C78 68 66 81 50 88 C34 81 22 68 22 48 V25 Z"
+                          stroke="#7dd3fc" stroke-width="1" stroke-opacity="0.5" fill="none"/>
+                    <circle cx="50" cy="30" r="1.6" fill="#7dd3fc"/>
+                    <circle cx="30" cy="45" r="1.6" fill="#7dd3fc"/>
+                    <circle cx="70" cy="45" r="1.6" fill="#7dd3fc"/>
+                    <circle cx="35" cy="70" r="1.6" fill="#7dd3fc"/>
+                    <circle cx="65" cy="70" r="1.6" fill="#7dd3fc"/>
+                    <path d="M50 30 L30 45 M50 30 L70 45 M30 45 L35 70 M70 45 L65 70"
+                          stroke="#7dd3fc" stroke-width="0.6" stroke-opacity="0.55"/>
+                    <rect x="38" y="50" width="24" height="19" rx="3"
+                          stroke="#e6f7ff" stroke-width="2.4" fill="rgba(125,211,252,0.14)"/>
+                    <path d="M42 50 V43 a8 8 0 0 1 16 0 V50"
+                          stroke="#e6f7ff" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+                    <circle cx="50" cy="58" r="2.6" fill="#e6f7ff"/>
+                    <line x1="50" y1="60.5" x2="50" y2="64" stroke="#e6f7ff" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+            </div>
+            <div class='pramaan-title'>PRAMAAN Threat Intelligence</div>
+            <div class='pramaan-sub'>Enterprise-Grade Digital Forensics &amp; Phishing Incident Response</div>
+            <div>
+                <span class='trust-badge'>SHA-256 VERIFIED</span>
+                <span class='trust-badge'>ZERO-KNOWLEDGE PROOF</span>
+                <span class='trust-badge'>SOC ANALYST GRADE</span>
+            </div>
+            <div class='pramaan-desc'>
+                Upload a suspect <code style='color:#06B6D4;'>.eml</code> file to begin a cryptographically-verified forensic
+                inspection — authentication analysis, URL &amp; IP threat correlation, relay tracing,
+                and geolocation intelligence, all anchored to tamper-evident blockchain evidence.
             </div>
         </div>
         """, unsafe_allow_html=True)
 
-        st.info("Use the **SOC Data Source** panel in the sidebar to upload an .eml file or load the sample.")
+        _up1, _up2, _up3 = st.columns([1, 2, 1])
+        with _up2:
+            uploaded_landing = st.file_uploader(
+                "Upload .eml file",
+                type=["eml"],
+                key="landing_upload",
+                label_visibility="collapsed",
+            )
+        st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
+        if _user:
+            _uname = _user.get("username", "unknown")
+            _initial = _uname[0].upper() if _uname else "U"
+            st.markdown(f"""
+            <div style="display:flex; justify-content:center; margin-top:6px;">
+                <div style="display:inline-flex; align-items:center; gap:10px;
+                            background: rgba(56,189,248,0.08);
+                            border: 1px solid rgba(56,189,248,0.30);
+                            border-radius: 999px;
+                            padding: 6px 16px 6px 6px;
+                            font-family: 'JetBrains Mono', monospace;
+                            font-size: 0.88rem; color: #bae6fd;">
+                    <span style="width:26px; height:26px; border-radius:50%;
+                                 background: linear-gradient(135deg, #3b82f6, #2563EB);
+                                 display:flex; align-items:center; justify-content:center;
+                                 color:#fff; font-weight:800; font-size:0.75rem;">{_initial}</span>
+                    <span>{_uname}</span>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
 
-    st.stop()
+        _so1, _so2, _so3 = st.columns([2, 1, 2])
+        with _so2:
+            if st.button("Sign out", key="landing_signout", use_container_width=True):
+                auth_logout()
+                st.rerun()
 
+        if uploaded_landing is not None:
+            st.session_state["raw_bytes"] = uploaded_landing.getvalue()
+            st.session_state["file_name"] = uploaded_landing.name
+            st.rerun()
+        else:
+            st.stop()
 
 # --- DASHBOARD (Post-Upload) ---
+# Auto-expand sidebar only on the dashboard (post-upload)
+st.markdown(
+    """
+    <style>
+    section[data-testid="stSidebar"] {
+        display: block !important;
+        visibility: visible !important;
+        transform: translateX(0) !important;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
 
 # Process Email Artifacts
 msg = email.message_from_bytes(raw_bytes, policy=policy.default)
@@ -735,13 +1099,17 @@ geo_results = [geolocate_ip(item["ip"]) for item in ips]
 # Semantic Risk Coloring
 if risk_score >= 65:
     risk_level = "HIGH RISK"
-    risk_color = "#e24b4a"
+    risk_color = "#F43F5E"
 elif risk_score >= 35:
     risk_level = "MODERATE RISK"
-    risk_color = "#fbbf6d"
+    risk_color = "#F59E0B"
 else:
     risk_level = "LOW RISK"
-    risk_color = "#3ddc97"
+    risk_color = "#10B981"
+
+from_addr = str(msg.get("From", ""))
+ret_addr = str(msg.get("Return-Path", ""))
+rep_addr = str(msg.get("Reply-To", ""))
 
 headers_dict = {
     "Subject": subject_text or "N/A",
@@ -797,7 +1165,59 @@ pdf_bytes = generate_pdf_report(
     relay_hops=hop_rows,
 )
 
-# --- TOP MAIN HEADER ---
+# --- 5 HORIZONTAL TABS ---
+with st.sidebar:
+    selected_tab = st.radio(
+        "NAVIGATION",
+        ["Triage Overview", "Auth & Content", "Relay & Route",
+         "IP & Domain Intel"],
+        label_visibility="collapsed",
+        key="main_nav",
+    )
+    st.markdown("<div style='height: 24px;'></div>", unsafe_allow_html=True)
+    st.markdown("---")
+    if st.button("Sign out", key="sidebar_signout", use_container_width=True):
+        auth_logout()
+        st.rerun()
+# --- TOP-LEVEL CONTRADICTION BANNER (shows on every tab) ---
+# ---- CONTRADICTION BANNER (unchanged logic) ----
+if xai_result.get("severity") == "CRITICAL":
+    crit_alerts = [a for a in xai_result.get("alerts", []) if a.get("severity") == "CRITICAL"]
+    alert_desc = crit_alerts[0].get("description") if crit_alerts else "AI verdict directly conflicts with cryptographic authentication failure."
+    st.markdown(f"""
+    <div style="background: linear-gradient(135deg, rgba(239, 68, 68, 0.25) 0%, rgba(153, 27, 27, 0.35) 100%);
+                border: 2px solid #ef4444; border-radius: 8px; padding: 12px 18px; margin-bottom: 14px;">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+            <div>
+                <h3 style="color: #ef4444; margin: 0; font-size: 1.05rem; font-weight: 800;">CRITICAL XAI CONTRADICTION DETECTED</h3>
+                <p style="color: #fca5a5; margin: 3px 0 0 0; font-size: 0.85rem;">{alert_desc}</p>
+            </div>
+            <span style="background-color: #ef4444; color: #ffffff; padding: 5px 12px; border-radius: 9999px; font-weight: 800; font-size: 0.75rem;">ANALYST REVIEW REQUIRED</span>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+elif xai_result.get("severity") == "HIGH":
+    high_alerts = [a for a in xai_result.get("alerts", []) if a.get("severity") == "HIGH"]
+    alert_desc = high_alerts[0].get("description") if high_alerts else "AI flagged email as phishing but authentication passed."
+    st.markdown(f"""
+    <div style="background: rgba(245, 158, 11, 0.10);
+                border: 2px solid #F59E0B; border-radius: 8px; padding: 12px 18px; margin-bottom: 14px;">
+        <h3 style="color: #F59E0B; margin: 0; font-size: 1.05rem; font-weight: 800;">HIGH XAI CONTRADICTION — POTENTIAL FALSE POSITIVE</h3>
+        <p style="color: #F59E0B; margin: 3px 0 0 0; font-size: 0.85rem;">{alert_desc}</p>
+    </div>
+    """, unsafe_allow_html=True)
+elif xai_result.get("severity") == "AMBER":
+    amber_alerts = [a for a in xai_result.get("alerts", []) if a.get("severity") == "AMBER"]
+    alert_desc = amber_alerts[0].get("description") if amber_alerts else "Low model confidence amidst high threat score."
+    st.markdown(f"""
+    <div style="background: rgba(245, 158, 11, 0.08);
+                border: 2px solid #F59E0B; border-radius: 8px; padding: 10px 16px; margin-bottom: 14px;">
+        <h3 style="color: #F59E0B; margin: 0; font-size: 1rem; font-weight: 800;">AMBER XAI CONTRADICTION — MODEL AMBIGUITY</h3>
+        <p style="color: #F59E0B; margin: 3px 0 0 0; font-size: 0.85rem;">{alert_desc}</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+# --- STATUS PILLS ROW (Neo4j + Sepolia) ---
 _neo = neo4j_engine.test_connection()
 _neo_ok = _neo.get("mode") == "neo4j" or _neo.get("status") in ("CONNECTED", "Live Neo4j")
 _neo_cls = "soc-status-ok" if _neo_ok else "soc-status-bad"
@@ -815,216 +1235,109 @@ try:
 except Exception:
     _sep_cls, _sep_txt = "soc-status-bad", "Sepolia OFFLINE"
 
-_user_label = _user.get("username", "unknown") if _user else "guest"
-_user_role_label = _role.upper() if _role else "ANALYST"
-
-_hdr_c1, _hdr_c2, _hdr_c3 = st.columns([2, 2, 1])
-
-with _hdr_c1:
-    st.text_input(
-        "search",
-        placeholder="Search SHA-256, IOC, sender ... (coming soon)",
-        disabled=True,
-        label_visibility="collapsed",
-        key="global_search_bar",
-    )
-
-with _hdr_c2:
-    st.markdown(
-        '<div class="soc-header-row">'
-        '<span class="soc-status-pill ' + _neo_cls + '">'
-        '<span class="soc-status-dot"></span>' + _neo_txt + '</span>'
-        '<span class="soc-status-pill ' + _sep_cls + '">'
-        '<span class="soc-status-dot"></span>' + _sep_txt + '</span>'
-        '</div>',
-        unsafe_allow_html=True,
-    )
-
-with _hdr_c3:
-    st.markdown(
-        '<div class="soc-user-chip">'
-        + _user_label +
-        ' <span class="soc-user-role">' + _user_role_label + '</span>'
-        '</div>',
-        unsafe_allow_html=True,
-    )
-    if st.button("Sign out", key="header_signout", use_container_width=True):
-        auth_logout()
-        st.rerun()
-
-# Artifact banner
-_artifacts_badge = ""
-if xai_result.get("requires_analyst_review"):
-    _artifacts_badge = (
-        '<span style="background-color: rgba(239, 68, 68, 0.18); '
-        'border: 1.5px solid #ef4444; color: #ef4444; padding: 4px 12px; '
-        'border-radius: 6px; font-weight: 800; font-size: 0.85rem; '
-        "font-family: 'JetBrains Mono', monospace; margin-left: 12px; "
-        'display: inline-block; vertical-align: middle;">'
-        'ANALYST REVIEW REQUIRED</span>'
-    )
 st.markdown(
-    '<div style="margin-top: 6px; margin-bottom: 12px;">'
-    '<span style="font-size: 1.1rem; font-weight: 800; color: #f8fafc;">Target Artifact:</span> '
-    '<code style="font-size: 1.0rem; color: #7dd3fc; background-color: #1e293b; '
-    'padding: 4px 10px; border-radius: 6px;">' + file_name + '</code>'
-    + _artifacts_badge +
-    '<span style="margin-left: 16px;">'
-    '</span>'
+    '<div class="dashboard-status-row" style="display:flex; justify-content:center; gap:8px; margin:4px 0 12px;">'
+    '<span class="soc-status-pill ' + _sep_cls + '">'
+    '<span class="soc-status-dot"></span>' + _sep_txt + '</span>'
+    '<span class="soc-status-pill ' + _neo_cls + '">'
+    '<span class="soc-status-dot"></span>' + _neo_txt + '</span>'
     '</div>',
     unsafe_allow_html=True,
 )
-
-_dl_c1, _dl_c2 = st.columns(2)
-with _dl_c1:
-    if st.button("Upload another .eml", key="reset_btn", use_container_width=True):
-        st.session_state.clear()
-        st.rerun()
-with _dl_c2:
-    st.download_button(
-        label="Download Report",
-        data=pdf_bytes,
-        file_name="PRAMAAN_Report_" + file_name + ".pdf",
-        mime="application/pdf",
-        use_container_width=True,
-    )
-
-st.markdown("<div style='margin-bottom: 12px;'></div>", unsafe_allow_html=True)
-
-
-# --- 5 HORIZONTAL TABS ---
-tab1, tab2, tab3, tab4, tab5 = st.tabs([
-    "Tab 1: Triage Overview",
-    "Tab 2: Authentication",
-    "Tab 3: Content & URL",
-    "Tab 4: Relay & Route",
-    "Tab 5: IP & Domain Intel"
-])
-
 # ==========================================
 # TAB 1: TRIAGE OVERVIEW
 # ==========================================
-with tab1:
+if selected_tab == "Triage Overview":
     st.markdown("<div class='soc-card'>", unsafe_allow_html=True)
 
-    # CONTRADICTION ALERTS BANNER (Issue #4)
-    if xai_result.get("severity") == "CRITICAL":
-        crit_alerts = [a for a in xai_result.get("alerts", []) if a.get("severity") == "CRITICAL"]
-        alert_desc = crit_alerts[0].get("description") if crit_alerts else "AI verdict directly conflicts with cryptographic authentication failure."
-        st.markdown(f"""
-        <div style="background: linear-gradient(135deg, rgba(239, 68, 68, 0.25) 0%, rgba(153, 27, 27, 0.35) 100%);
-                    border: 2px solid #ef4444; border-radius: 8px; padding: 16px 20px; margin-bottom: 20px;">
-            <div style="display: flex; align-items: center; justify-content: space-between;">
-                <div style="display: flex; align-items: center; gap: 14px;">
-                    <span style="font-size: 2.2rem;"></span>
-                    <div>
-                        <h3 style="color: #ef4444; margin: 0; font-size: 1.25rem; font-weight: 800;">CRITICAL XAI CONTRADICTION DETECTED</h3>
-                        <p style="color: #fca5a5; margin: 4px 0 0 0; font-size: 0.95rem;">{alert_desc}</p>
-                    </div>
-                </div>
-                <span style="background-color: #ef4444; color: #ffffff; padding: 6px 14px; border-radius: 9999px; font-weight: 800; font-size: 0.85rem; letter-spacing: 0.05em;">
-                     ANALYST REVIEW REQUIRED
-                </span>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-    elif xai_result.get("severity") == "HIGH":
-        high_alerts = [a for a in xai_result.get("alerts", []) if a.get("severity") == "HIGH"]
-        alert_desc = high_alerts[0].get("description") if high_alerts else "AI flagged email as phishing but authentication passed."
-        st.markdown(f"""
-        <div style="background: linear-gradient(135deg, rgba(249, 115, 22, 0.2) 0%, rgba(194, 65, 12, 0.25) 100%);
-                    border: 2px solid #f97316; border-radius: 8px; padding: 16px 20px; margin-bottom: 20px;">
-            <div style="display: flex; align-items: center; justify-content: space-between;">
-                <div style="display: flex; align-items: center; gap: 14px;">
-                    <span style="font-size: 2.2rem;"></span>
-                    <div>
-                        <h3 style="color: #f97316; margin: 0; font-size: 1.25rem; font-weight: 800;">HIGH XAI CONTRADICTION — POTENTIAL FALSE POSITIVE</h3>
-                        <p style="color: #fdba74; margin: 4px 0 0 0; font-size: 0.95rem;">{alert_desc}</p>
-                    </div>
-                </div>
-                <span style="background-color: #f97316; color: #ffffff; padding: 6px 14px; border-radius: 9999px; font-weight: 800; font-size: 0.85rem; letter-spacing: 0.05em;">
-                     ANALYST REVIEW REQUIRED
-                </span>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-    elif xai_result.get("severity") == "AMBER":
-        amber_alerts = [a for a in xai_result.get("alerts", []) if a.get("severity") == "AMBER"]
-        alert_desc = amber_alerts[0].get("description") if amber_alerts else "Low model confidence amidst high threat score."
-        st.markdown(f"""
-        <div style="background: linear-gradient(135deg, rgba(234, 179, 8, 0.2) 0%, rgba(161, 98, 7, 0.25) 100%);
-                    border: 2px solid #eab308; border-radius: 8px; padding: 14px 18px; margin-bottom: 20px;">
-            <div style="display: flex; align-items: center; gap: 14px;">
-                <span style="font-size: 2rem;"></span>
-                <div>
-                    <h3 style="color: #eab308; margin: 0; font-size: 1.15rem; font-weight: 800;">AMBER XAI CONTRADICTION — MODEL AMBIGUITY</h3>
-                    <p style="color: #fef08a; margin: 4px 0 0 0; font-size: 0.95rem;">{alert_desc}</p>
-                </div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    # RADIAL THREAT SCORE METER (Plotly Gauge - SOC Design System)
-    center_col1, center_col2, center_col3 = st.columns([1, 2, 1])
-    with center_col2:
-        # Color logic matching SOC design tokens
+    # ---- ROW 1: Executive Summary + Gauge (single card row) ----
+    r1_left, r1_right = st.columns([3, 1])
+
+    with r1_left:
+        st.markdown("#### Executive Summary")
+        st.markdown(
+            f"**Target Artifact:** <code style='color:#06B6D4;background:rgba(6, 182, 212, 0.20);padding:2px 8px;border-radius:4px;'>{file_name}</code>",
+            unsafe_allow_html=True,
+        )
+        st.markdown(
+            f"**Target EML Hash:** <code style='color:#10B981;font-family:JetBrains Mono,monospace;font-size:0.82rem;'>{sha256_hash}</code>",
+            unsafe_allow_html=True,
+        )
+        st.markdown(
+            f"**ML Phishing Probability:** <font color='#06B6D4'><b>{ml_prob * 100:.1f}%</b></font>",
+            unsafe_allow_html=True,
+        )
+
+        b1, b2, b3 = st.columns(3)
+        with b1:
+            st.button("Copy Hash", key="copy_hash_t1", use_container_width=True)
+        with b2:
+            if st.button("Upload another .eml", key="reset_btn_t1", use_container_width=True):
+                st.session_state["raw_bytes"] = None
+                st.session_state["file_name"] = ""
+                st.rerun()
+        with b3:
+            st.download_button(
+                label="Download Report",
+                data=pdf_bytes,
+                file_name="PRAMAAN_Report_" + file_name + ".pdf",
+                mime="application/pdf",
+                use_container_width=True,
+                key="dl_t1",
+            )
+
+    with r1_right:
         if risk_score >= 65:
-            gauge_color = "#f85149"   # --soc-critical
+            gauge_color = "#F43F5E"
         elif risk_score >= 35:
-            gauge_color = "#d29922"   # --soc-medium
+            gauge_color = "#F59E0B"
         else:
-            gauge_color = "#3fb950"   # --soc-safe
+            gauge_color = "#10B981"
 
         gauge_fig = go.Figure(go.Indicator(
             mode="gauge+number",
             value=risk_score,
             number={
-                "font": {"size": 44, "family": "JetBrains Mono, monospace", "color": gauge_color},
-                "suffix": "<span style='font-size:18px;color:#8b949e'> / 100</span>",
+                "font": {"size": 34, "family": "JetBrains Mono, monospace", "color": gauge_color},
+                "suffix": "<span style='font-size:13px;color:#8b949e'> / 100</span>",
             },
             gauge={
-                "axis": {
-                    "range": [0, 100],
-                    "tickwidth": 1,
-                    "tickcolor": "#30363d",
-                    "tickfont": {"size": 10, "color": "#6e7681"},
-                    "dtick": 25,
-                },
-                "bar": {"color": gauge_color, "thickness": 0.28},
-                "bgcolor": "#0d1117",
+                "axis": {"range": [0, 100], "tickwidth": 1, "tickcolor": "rgba(6, 182, 212, 0.15)",
+                         "tickfont": {"size": 9, "color": "#6e7681"}, "dtick": 25},
+                "bar": {"color": gauge_color, "thickness": 0.30},
+                "bgcolor": "#0F172A",
                 "borderwidth": 0,
                 "steps": [
                     {"range": [0, 35],  "color": "rgba(63,185,80,0.08)"},
                     {"range": [35, 65], "color": "rgba(210,153,34,0.08)"},
                     {"range": [65, 100],"color": "rgba(248,81,73,0.08)"},
                 ],
-                "threshold": {
-                    "line": {"color": "#e6edf3", "width": 2},
-                    "thickness": 0.75,
-                    "value": risk_score,
-                },
+                "threshold": {"line": {"color": "#e6edf3", "width": 2},
+                              "thickness": 0.75, "value": risk_score},
             },
         ))
-
         gauge_fig.update_layout(
-            height=260,
-            margin={"l": 20, "r": 20, "t": 20, "b": 10},
+            height=170,
+            margin={"l": 0, "r": 0, "t": 0, "b": 0},
             paper_bgcolor="rgba(0,0,0,0)",
             plot_bgcolor="rgba(0,0,0,0)",
             font={"family": "Inter, sans-serif", "color": "#e6edf3"},
         )
-
-        st.plotly_chart(gauge_fig, use_container_width=True, config={"displayModeBar": False})
-
-        # Verdict badge below gauge
-        badge_color = gauge_color
         st.markdown(
-            f"""<div style="text-align:center;margin-top:-10px;">
-                <span style="background:{badge_color}22;border:1px solid {badge_color};
-                             color:{badge_color};padding:6px 18px;border-radius:6px;
-                             font-weight:800;font-size:0.95rem;
+            '<div style="border: 1px solid rgba(6, 182, 212, 0.30); '
+            'border-radius: 10px; padding: 8px; '
+            'background: rgba(15, 23, 42, 0.4);">',
+            unsafe_allow_html=True,
+        )
+        st.plotly_chart(gauge_fig, use_container_width=True, config={"displayModeBar": False})
+        st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown(
+            f"""<div style="text-align:center;margin-top:-12px;">
+                <span style="background:{gauge_color}22;border:1px solid {gauge_color};
+                             color:{gauge_color};padding:3px 12px;border-radius:5px;
+                             font-weight:800;font-size:0.78rem;
                              font-family:'JetBrains Mono',monospace;
-                             letter-spacing:1px;">
+                             letter-spacing:0.8px;">
                     {risk_level}
                 </span>
             </div>""",
@@ -1032,139 +1345,179 @@ with tab1:
         )
 
     st.markdown("---")
-    ov_c1, ov_c2 = st.columns(2)
 
-    with ov_c1:
-        st.markdown("#### Executive Incident Verdict")
-        st.markdown(f"**ML Phishing Probability**: <font color='#7dd3fc'><b>{ml_prob * 100:.1f}%</b></font>", unsafe_allow_html=True)
-        st.markdown(f"**Target EML Hash**: <code class='mono-font'>{sha256_hash}</code>", unsafe_allow_html=True)
-        st.button(" Copy Hash", key="copy_hash_t1", on_click=lambda: st.write("Copied!"))
+    # ---- ROW 2: Findings (left) + Breakdown (right) ----
+    r2_left, r2_right = st.columns([3, 2])
 
-        st.markdown("##### Key Threat Findings")
+    with r2_left:
+        st.markdown("#### Key Threat Findings")
         if risk_factors:
-            for factor in risk_factors:
-                st.markdown(f"• **{factor['category']}** (+{factor['points']} pts): {factor['description']}")
+            for factor in sorted(risk_factors, key=lambda f: f["points"], reverse=True):
+                st.markdown(
+                    f"<div style='padding:5px 0;border-bottom:1px solid rgba(6,182,212,0.12);'>"
+                    f"<span style='color:#06B6D4;font-weight:700;font-size:0.82rem;'>{factor['category']}</span> "
+                    f"<span style='color:#F59E0B;font-family:JetBrains Mono,monospace;font-size:0.76rem;'>(+{factor['points']} pts)</span>: "
+                    f"<span style='color:#e2e8f0;font-size:0.82rem;'>{factor['description']}</span>"
+                    f"</div>",
+                    unsafe_allow_html=True,
+                )
         else:
             st.success("No critical threat factors detected in this email.")
 
-        # Header Injection Alert Cards (HIGH severity)
-        if header_forensics.get("header_injection_anomalies"):
-            st.markdown("##### Header Injection Anomalies")
-            for _a in header_forensics["header_injection_anomalies"]:
-                st.error(
-                    "**HIGH** — Header injection: `" + _a["header"] + "` appears "
-                    + str(_a["count"]) + " times (+" + str(_a["risk_modifier"])
-                    + " risk). " + _a["explanation"]
-                )
-
-    with ov_c2:
+    with r2_right:
         st.markdown("#### Threat Factor Weight Breakdown")
-        st.markdown("<div class='soc-chart-panel'>", unsafe_allow_html=True)
         if risk_factors:
             df_f = pd.DataFrame(risk_factors)
-            chart = alt.Chart(df_f).mark_bar().encode(
-                x=alt.X('points:Q', title='Score Penalty Points'),
-                y=alt.Y('category:N', title='Category', sort='-x'),
-                color=alt.Color('category:N', scale=alt.Scale(scheme='dark2'), legend=None),
-                tooltip=['category', 'points', 'description']
-            ).properties(height=200)
-            st.altair_chart(chart, width='stretch')
+            chart = alt.Chart(df_f).mark_bar(
+                cornerRadiusTopRight=4,
+                cornerRadiusBottomRight=4,
+                size=22,
+            ).encode(
+                x=alt.X(
+                    'points:Q',
+                    title='Score Penalty Points',
+                    axis=alt.Axis(labelFontSize=10, titleFontSize=11,
+                                  titleColor='#94a3b8', labelColor='#94a3b8',
+                                  gridColor='rgba(6, 182, 212, 0.20)', gridDash=[3, 3],
+                                  domain=True,
+                                  domainColor='rgba(6, 182, 212, 0.30)',
+                                  tickColor='rgba(6, 182, 212, 0.30)'),
+                ),
+                y=alt.Y(
+                    'category:N',
+                    title='',
+                    sort='-x',
+                    axis=alt.Axis(labelFontSize=11, labelColor='#e2e8f0',
+                                  labelPadding=8, labelLimit=180,
+                                  domain=True,
+                                  domainColor='rgba(6, 182, 212, 0.30)',
+                                  tickColor='rgba(6, 182, 212, 0.30)'),
+                ),
+                color=alt.Color(
+                    'category:N',
+                    scale=alt.Scale(
+                        domain=['Suspicious Keywords', 'Authentication',
+                                'ML Classifier', 'URL Metrics',
+                                'Header Mismatch', 'Header Injection'],
+                        range=['#06B6D4', '#3B82F6', '#A855F7',
+                               '#F59E0B', '#EC4899', '#F43F5E'],
+                    ),
+                    legend=None,
+                ),
+                tooltip=[
+                    alt.Tooltip('category:N', title='Category'),
+                    alt.Tooltip('points:Q', title='Points'),
+                    alt.Tooltip('description:N', title='Description'),
+                ],
+            ).properties(height=max(160, len(risk_factors) * 42))
+            st.altair_chart(
+                chart.configure_view(
+                    stroke='rgba(6, 182, 212, 0.30)',
+                    strokeWidth=1,
+                ),
+                width='stretch',
+            )
         else:
             st.info("Clean factor breakdown.")
-        st.markdown("</div>", unsafe_allow_html=True)
 
-    # SHAP Waterfall Chart Sub-Section
     st.markdown("---")
-    st.markdown("#### Explainable AI (XAI) — SHAP Model Attributions")
-    st.caption("Local feature attributions calculated using SHAP (Shapley Additive exPlanations) for tokens shifting the Logistic Regression prediction.")
 
+    # ---- ROW 3: Full-width SHAP Model Attributions ----
+    st.markdown("#### Explainable AI (XAI) — SHAP Model Attributions")
     w_data = xai_explanation.get("waterfall_data", {})
     if w_data and w_data.get("labels"):
         labels = w_data["labels"]
         vals = w_data["values"]
         base_v = w_data.get("base_value", 0.0)
-
         wf_measures = ["relative"] * len(labels) + ["total"]
-        wf_x = labels + ["Total Model Impact"]
+        wf_x = labels + ["Total"]
         wf_y = vals + [sum(vals)]
-
         fig = go.Figure(go.Waterfall(
-            name="SHAP Attributions",
+            name="SHAP",
             orientation="v",
             measure=wf_measures,
             x=wf_x,
             y=wf_y,
             base=base_v,
-            decreasing={"marker": {"color": "#3ddc97"}},
-            increasing={"marker": {"color": "#ef4444"}},
-            totals={"marker": {"color": "#38bdf8"}},
-            connector={"line": {"color": "#64748b", "width": 1.5, "dash": "dot"}},
-            text=[f"{v:+.3f}" for v in vals] + [f"{w_data.get('final_value', 0.0):.3f}"],
-            textposition="outside"
+            decreasing={"marker": {"color": "#10B981"}},
+            increasing={"marker": {"color": "#F43F5E"}},
+            totals={"marker": {"color": "#A855F7"}},
+            connector={"line": {"color": "#64748b", "width": 1.2, "dash": "dot"}},
+            text=[f"{v:+.3f}" for v in vals] + [f"{sum(vals):.3f}"],
+            textposition="outside",
+            textfont={"size": 10},
         ))
-
         fig.update_layout(
             paper_bgcolor="rgba(0,0,0,0)",
             plot_bgcolor="rgba(15, 23, 42, 0.6)",
-            font=dict(color="#94a3b8", family="Inter"),
-            xaxis=dict(title="Influential Tokens / N-Grams", gridcolor="#334155"),
-            yaxis=dict(title="Attribution Weight (Log-Odds)", gridcolor="#334155"),
-            height=360,
-            margin=dict(l=20, r=20, t=30, b=30)
+            font=dict(color="#94a3b8", family="Inter", size=11),
+            xaxis=dict(title="Influential Tokens / N-Grams", gridcolor="rgba(6, 182, 212, 0.30)", tickfont=dict(size=10)),
+            yaxis=dict(title="Weight (Log-Odds)", gridcolor="rgba(6, 182, 212, 0.30)", tickfont=dict(size=10)),
+            height=380,
+            margin=dict(l=20, r=20, t=20, b=40),
+        )
+        st.markdown(
+            '<div style="border: 1px solid rgba(6, 182, 212, 0.30); '
+            'border-radius: 10px; padding: 8px; '
+            'background: rgba(15, 23, 42, 0.4);">',
+            unsafe_allow_html=True,
         )
         st.plotly_chart(fig, width='stretch')
+        st.markdown('</div>', unsafe_allow_html=True)
+    else:
+        st.caption("No SHAP data available.")
 
-        xai_c1, xai_c2 = st.columns(2)
-        with xai_c1:
-            st.markdown("##### Top Phishing Signals (Positive Impact)")
-            pos_f = xai_explanation.get("top_positive_features", [])
-            if pos_f:
-                st.dataframe(pd.DataFrame(pos_f).rename(columns={"feature": "Token Feature", "attribution": "SHAP Weight"}), width='stretch', hide_index=True)
-            else:
-                st.caption("No significant phishing tokens detected.")
-
-        with xai_c2:
-            st.markdown("##### Top Legitimate Signals (Negative Impact)")
-            neg_f = xai_explanation.get("top_negative_features", [])
-            if neg_f:
-                st.dataframe(pd.DataFrame(neg_f).rename(columns={"feature": "Token Feature", "attribution": "SHAP Weight"}), width='stretch', hide_index=True)
-            else:
-                st.caption("No significant legitimate tokens detected.")
-
+    # ---- ROW 4: Positive and Negative Signal Tables ----
+    signal_left, signal_right = st.columns(2)
+    with signal_left:
+        st.markdown("#### Top Phishing Signals (Positive Impact)")
+        pos_f = xai_explanation.get("top_positive_features", [])
+        if pos_f:
+            st.dataframe(
+                pd.DataFrame(pos_f).rename(columns={"feature": "Token Feature", "attribution": "SHAP Weight"}),
+                width='stretch',
+                hide_index=True,
+            )
+        else:
+            st.caption("No significant phishing tokens detected.")
+    with signal_right:
+        st.markdown("#### Top Legitimate Signals (Negative Impact)")
+        neg_f = xai_explanation.get("top_negative_features", [])
+        if neg_f:
+            st.dataframe(
+                pd.DataFrame(neg_f).rename(columns={"feature": "Token", "attribution": "SHAP Weight"}),
+                width='stretch',
+                hide_index=True,
+            )
+        else:
+            st.caption("No significant legitimate tokens detected.")
     st.markdown("</div>", unsafe_allow_html=True)
-
-
-
 # ==========================================
 # TAB 2: AUTHENTICATION
 # ==========================================
-with tab2:
+elif selected_tab == "Auth & Content":
     st.markdown("<div class='soc-card'>", unsafe_allow_html=True)
     st.markdown("### Authentication Protocols & Domain Alignment Matrix")
-    
+
+    # --- ROW 1: Auth pills ---
     a1, a2, a3, a4 = st.columns(4)
     with a1:
         st.markdown("**SPF Protocol**")
         b_cls = "badge-pass" if auth_info["spf"] == "PASS" else ("badge-fail" if auth_info["spf"] == "FAIL" else "badge-warn")
         st.markdown(f'<span class="{b_cls}">{auth_info["spf"]}</span>', unsafe_allow_html=True)
-    
     with a2:
         st.markdown("**DKIM Signature**")
         b_cls = "badge-pass" if auth_info["dkim"] == "PASS" else ("badge-fail" if auth_info["dkim"] == "FAIL" else "badge-warn")
         st.markdown(f'<span class="{b_cls}">{auth_info["dkim"]}</span>', unsafe_allow_html=True)
-
     with a3:
         st.markdown("**DMARC Policy**")
         b_cls = "badge-pass" if auth_info["dmarc"] == "PASS" else ("badge-fail" if auth_info["dmarc"] == "FAIL" else "badge-warn")
         st.markdown(f'<span class="{b_cls}">{auth_info["dmarc"]}</span>', unsafe_allow_html=True)
-
     with a4:
         st.markdown("**ARC Validation**")
         b_cls = "badge-pass" if auth_info["arc"] == "PASS" else ("badge-fail" if auth_info["arc"] == "FAIL" else "badge-warn")
         st.markdown(f'<span class="{b_cls}">{auth_info["arc"]}</span>', unsafe_allow_html=True)
 
-
-    # Header Injection Alert Cards (Tab 2)
     if header_forensics.get("header_injection_anomalies"):
         st.markdown("---")
         st.markdown("#### Header Injection Anomalies")
@@ -1175,61 +1528,108 @@ with tab2:
                 + " risk). " + _a["explanation"]
             )
 
+    # --- ROW 2: Domain Alignment Matrix (full width) ---
     st.markdown("---")
     st.markdown("#### Domain Alignment Matrix")
-    
-    from_addr = str(msg.get("From", ""))
-    ret_addr = str(msg.get("Return-Path", ""))
-    rep_addr = str(msg.get("Reply-To", ""))
-    
+
+
     align_data = threat_intel.analyze_domain_alignment(from_addr, ret_addr, rep_addr)
-    
+
     matrix_df = pd.DataFrame([
-        {"Header Path": "Sender (From)", "Address": from_addr, "Extracted Domain": align_data.get("from_domain"), "Alignment Status": "PRIMARY"},
-        {"Header Path": "Return-Path", "Address": ret_addr, "Extracted Domain": align_data.get("return_domain"), "Alignment Status": "MATCH" if not align_data.get("is_spoofed") else "MISMATCH / SPOOFED"},
-        {"Header Path": "Reply-To", "Address": rep_addr, "Extracted Domain": align_data.get("reply_to_domain"), "Alignment Status": "MATCH" if align_data.get("from_domain") == align_data.get("reply_to_domain") else "DIFFERENT REPLIER"}
+        {"Header Path": "Sender (From)", "Address": from_addr,
+         "Extracted Domain": align_data.get("from_domain"),
+         "Alignment Status": "PRIMARY"},
+        {"Header Path": "Return-Path", "Address": ret_addr,
+         "Extracted Domain": align_data.get("return_domain"),
+         "Alignment Status": "MATCH" if not align_data.get("is_spoofed") else "MISMATCH / SPOOFED"},
+        {"Header Path": "Reply-To", "Address": rep_addr,
+         "Extracted Domain": align_data.get("reply_to_domain"),
+         "Alignment Status": "MATCH" if align_data.get("from_domain") == align_data.get("reply_to_domain") else "DIFFERENT REPLIER"}
     ])
     st.dataframe(matrix_df, width='stretch', hide_index=True)
 
+    # ============================================
+    # ROW 3: Incident Overview | Info Box
+    # ============================================
+    row1_left, row1_right = st.columns([3, 2])
+
+    with row1_left:
+        st.markdown("#### Incident Overview")
+        st.markdown(
+            f"**Subject:** {headers_dict.get('Subject', 'N/A')}<br>"
+            f"**From:** {headers_dict.get('From', 'N/A')}<br>"
+            f"**To:** {headers_dict.get('To', 'N/A')}<br>"
+            f"**Date:** {headers_dict.get('Date', 'N/A')}",
+            unsafe_allow_html=True,
+        )
+
+    with row1_right:
+        st.markdown(
+            '<div style="background: rgba(6,182,212,0.08); '
+            'border: 1px solid rgba(6,182,212,0.25); '
+            'border-radius: 8px; padding: 14px 16px; margin-top: 8px;">'
+            '<p style="color: #06B6D4; margin: 0; font-size: 0.85rem; '
+            'font-family: \'Inter\', sans-serif; line-height: 1.5;">'
+            '<b>Extracted raw MIME and body-embedded headers</b> — '
+            'forensic inspection of embedded headers, authentication '
+            'proofs, and threat contribution factors.'
+            '</p>'
+            '</div>',
+            unsafe_allow_html=True,
+        )
+
     st.markdown("---")
-    st.markdown("#### Tamper-Evident Forensic Verification (TEFV) Proof")
-    st.code(merkle_root, language="text")
-    st.button(" Copy Merkle Root", key="copy_merkle_t2", on_click=lambda: st.write("Copied!"))
 
-    st.markdown("**Verify a different file against this proof:**")
-    verify_file = st.file_uploader(
-        "Upload a file to check for tampering",
-        type=["eml", "txt", "pdf", "docx", "json"],
-        key="verify_uploader_t2",
-    )
+    # ============================================
+    # ROW 4: MIME Headers table | TEFV Proof
+    # ============================================
+    row2_left, row2_right = st.columns([1, 1])
 
-    if verify_file is not None:
-        verify_bytes = verify_file.getvalue()
-        if st.button(" Verify Cryptographic Proof", width='stretch'):
-            is_valid, curr_root, exp_root = zkfv.verify_evidence_proof(verify_bytes, zkfv_proof)
-            if is_valid:
-                st.success(" **Evidence Integrity Verified**: Merkle root matches cryptographic proof!")
-            else:
-                st.error(" **Verification Failed**: Proof mismatch!")
-                st.write(f"**Expected root:** `{exp_root}`")
-                st.write(f"**Uploaded file root:** `{curr_root}`")
-        with st.expander(" View Forensic Audit Ledger", expanded=False):
-            audit_logs = zkfv.get_recent_audit_logs(10)
-            if audit_logs:
-                st.dataframe(pd.DataFrame(audit_logs), width='stretch', hide_index=True)
-            else:
-                st.caption("No audit log entries recorded yet.")
+    with row2_left:
+        st.markdown("#### Extracted MIME Headers")
+        mime_df = pd.DataFrame([
+            {"Header": k, "Value": (v[:100] + "..." if len(str(v)) > 100 else v)}
+            for k, v in headers_dict.items()
+        ])
+        st.dataframe(mime_df, width='stretch', hide_index=True)
 
-        st.markdown("</div>", unsafe_allow_html=True)
+    with row2_right:
+        st.markdown("#### Tamper-Evident Forensic Verification (TEFV) Proof")
+        st.code(merkle_root, language="text")
+        st.button("Copy Merkle Root", key="copy_merkle_t2", on_click=lambda: st.write("Copied!"))
 
+        st.markdown("**Verify a different file against this proof:**")
+        st.markdown("<span style='font-size: 0.78rem; color: #94a3b8;'>Upload a file to check for tampering</span>", unsafe_allow_html=True)
+        verify_file = st.file_uploader(
+            "Upload a file to check for tampering",
+            type=["eml", "txt", "pdf", "docx", "json"],
+            key="verify_uploader_t2",
+            label_visibility="collapsed",
+        )
 
-# ==========================================
-# TAB 3: CONTENT & URL
-# ==========================================
-with tab3:
-    st.markdown("<div class='soc-card'>", unsafe_allow_html=True)
-    st.markdown("### Extracted URLs & Defanged Threat Analysis")
+        if verify_file is not None:
+            verify_bytes = verify_file.getvalue()
+            if st.button("Verify Cryptographic Proof", width='stretch', key="verify_proof_btn"):
+                is_valid, curr_root, exp_root = zkfv.verify_evidence_proof(verify_bytes, zkfv_proof)
+                if is_valid:
+                    st.success("Evidence Integrity Verified: Merkle root matches cryptographic proof!")
+                else:
+                    st.error("Verification Failed: Proof mismatch!")
+                    st.write(f"**Expected root:** `{exp_root}`")
+                    st.write(f"**Uploaded file root:** `{curr_root}`")
+            with st.expander("View Forensic Audit Ledger", expanded=False):
+                audit_logs = zkfv.get_recent_audit_logs(10)
+                if audit_logs:
+                    st.dataframe(pd.DataFrame(audit_logs), width='stretch', hide_index=True)
+                else:
+                    st.caption("No audit log entries recorded yet.")
 
+    st.markdown("---")
+
+    # ============================================
+    # ROW 5: Extracted URLs (full width)
+    # ============================================
+    st.markdown("#### Extracted URLs & Defanged Threat Analysis")
     if urls:
         url_analysis = threat_intel.analyze_url_structure(urls)
         url_rows = []
@@ -1249,26 +1649,56 @@ with tab3:
         st.info("No URLs extracted from email body.")
 
     st.markdown("---")
+
+    # ============================================
+    # ROW 6: Stacked Factor Chart (full width)
+    # ============================================
     st.markdown("#### Stacked Factor Contribution Chart")
     if risk_factors:
         df_factors = pd.DataFrame(risk_factors)
         chart = alt.Chart(df_factors).mark_bar().encode(
-            x=alt.X('sum(points):Q', title='Points Contribution'),
-            y=alt.Y('category:N', title='Threat Category', sort='-x'),
-            color=alt.Color('category:N', scale=alt.Scale(scheme='tableau10')),
+            x=alt.X('sum(points):Q', title='Points Contribution',
+                    axis=alt.Axis(labelFontSize=10, titleFontSize=11,
+                                  titleColor='#94a3b8', labelColor='#94a3b8',
+                                  gridColor='rgba(6, 182, 212, 0.20)',
+                                  domain=True,
+                                  domainColor='rgba(6, 182, 212, 0.30)',
+                                  tickColor='rgba(6, 182, 212, 0.30)')),
+            y=alt.Y('category:N', title='', sort='-x',
+                    axis=alt.Axis(labelFontSize=11, labelColor='#e2e8f0',
+                                  domain=True,
+                                  domainColor='rgba(6, 182, 212, 0.30)',
+                                  tickColor='rgba(6, 182, 212, 0.30)'),),
+            color=alt.Color(
+                'category:N',
+                scale=alt.Scale(
+                    domain=['Suspicious Keywords', 'Authentication',
+                            'ML Classifier', 'URL Metrics',
+                            'Header Mismatch', 'Header Injection'],
+                    range=['#06B6D4', '#3B82F6', '#A855F7',
+                           '#F59E0B', '#EC4899', '#F43F5E'],
+                ),
+                legend=alt.Legend(orient='right',
+                                  labelFontSize=10, titleFontSize=0,
+                                  labelColor='#e2e8f0'),
+            ),
             tooltip=['category', 'points', 'description']
         ).properties(height=200)
-        st.altair_chart(chart, width='stretch')
+        st.altair_chart(
+            chart.configure_view(
+                stroke='rgba(6, 182, 212, 0.30)',
+                strokeWidth=1,
+            ),
+            width='stretch',
+        )
     else:
         st.success("Zero threat score penalties detected.")
 
     st.markdown("---")
-    st.markdown("#### Extracted MIME Headers")
-    for k, v in headers_dict.items():
-        st.markdown(f"**{k}**: <code class='mono-font'>{v}</code>", unsafe_allow_html=True)
 
-    # -- Body-Embedded Header Spoofing (Issue #23) --
-    st.markdown("---")
+    # ============================================
+    # ROW 7: Body-Embedded Header Analysis (full width)
+    # ============================================
     st.markdown("#### Body-Embedded Header Analysis")
     try:
         _body_hdr = detect_body_header_spoofing(msg)
@@ -1284,7 +1714,6 @@ with tab3:
                     f"+{_body_hdr.get('total_risk_modifier', 0)}",
                     delta="Suspicious" if _body_hdr.get("total_risk_modifier", 0) > 0 else None,
                 )
-
             _mismatches = _body_hdr.get("mismatches", [])
             if _mismatches:
                 _rows = []
@@ -1302,14 +1731,8 @@ with tab3:
     except Exception as _e:
         st.caption(f"Body-header analysis unavailable: {type(_e).__name__}")
 
-
     st.markdown("</div>", unsafe_allow_html=True)
-
-
-# ==========================================
-# TAB 4: RELAY & ROUTE
-# ==========================================
-with tab4:
+elif selected_tab == "Relay & Route":
     st.markdown("<div class='soc-card'>", unsafe_allow_html=True)
     st.markdown("### Received Chain Timeline & Relay Hop Analysis")
 
@@ -1348,10 +1771,10 @@ with tab4:
     st.caption(f"Infrastructure Correlation: {graph_data['num_nodes']} Entities, {graph_data['num_edges']} Threat Relationships")
     st.markdown("""
     <div style="display: flex; gap: 24px; margin-top: 12px; font-size: 0.85rem; color: #94a3b8; flex-wrap: wrap;">
-        <div><span style="display: inline-block; width: 12px; height: 12px; background: #7dd3fc; border-radius: 50%; margin-right: 6px;"></span> Email</div>
-        <div><span style="display: inline-block; width: 12px; height: 12px; background: #fbbf6d; border-radius: 50%; margin-right: 6px;"></span> Domain</div>
-        <div><span style="display: inline-block; width: 12px; height: 12px; background: #e24b4a; border-radius: 50%; margin-right: 6px;"></span> IP / URL</div>
-        <div><span style="display: inline-block; width: 12px; height: 12px; background: #a78bfa; border-radius: 50%; margin-right: 6px;"></span> ASN</div>
+        <div><span style="display: inline-block; width: 12px; height: 12px; background: #06B6D4; border-radius: 50%; margin-right: 6px;"></span> Email</div>
+        <div><span style="display: inline-block; width: 12px; height: 12px; background: #F59E0B; border-radius: 50%; margin-right: 6px;"></span> Domain</div>
+        <div><span style="display: inline-block; width: 12px; height: 12px; background: #F43F5E; border-radius: 50%; margin-right: 6px;"></span> IP / URL</div>
+        <div><span style="display: inline-block; width: 12px; height: 12px; background: #A855F7; border-radius: 50%; margin-right: 6px;"></span> ASN</div>
     </div>
     """, unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
@@ -1362,7 +1785,7 @@ with tab4:
 # ==========================================
 # TAB 5: IP & DOMAIN INTEL
 # ==========================================
-with tab5:
+elif selected_tab == "IP & Domain Intel":
     st.markdown("<div class='soc-card'>", unsafe_allow_html=True)
     st.markdown("### Dynamic Geolocation Map & Campaign Intelligence")
 
@@ -1416,8 +1839,8 @@ with tab5:
             data=arcs,
             get_source_position="[from_lon, from_lat]",
             get_target_position="[to_lon, to_lat]",
-            get_source_color=[125, 211, 252, 220],
-            get_target_color=[239, 68, 68, 220],
+            get_source_color=[6, 182, 212, 220],
+            get_target_color=[244, 63, 94, 220],
             get_width=5,
             width_min_pixels=2,
             pickable=True,
@@ -1428,7 +1851,7 @@ with tab5:
             "ScatterplotLayer",
             data=hop_geo,
             get_position="[lon, lat]",
-            get_color=[125, 211, 252, 230],
+            get_color=[6, 182, 212, 230],
             get_radius=35000,
             pickable=True,
             auto_highlight=True,
@@ -1437,16 +1860,25 @@ with tab5:
         _center_lat = sum(h["lat"] for h in hop_geo) / len(hop_geo)
         _center_lon = sum(h["lon"] for h in hop_geo) / len(hop_geo)
 
+        st.markdown(
+            '<div style="border: 1px solid rgba(6, 182, 212, 0.30); '
+            'border-radius: 10px; padding: 6px; '
+            'background: rgba(15, 23, 42, 0.4);">',
+            unsafe_allow_html=True,
+        )
         st.pydeck_chart(pdk.Deck(
             layers=[arc_layer, node_layer],
             initial_view_state=pdk.ViewState(
                 latitude=_center_lat,
                 longitude=_center_lon,
-                zoom=2,
+                zoom=3.2,
                 pitch=30,
             ),
+            map_style="https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
             tooltip={"text": "{ip}\n{from_ip} -> {to_ip}"},
         ))
+        st.markdown('</div>', unsafe_allow_html=True)
+
         st.caption(
             "Relay hops drawn as arcs (blue source -> red target). "
             "Hops with private / unresolvable IPs are not shown."
@@ -1454,11 +1886,62 @@ with tab5:
 
     elif map_data:
         df_map = pd.DataFrame(map_data)
-        st.map(df_map, latitude="lat", longitude="lon", zoom=3)
+        _pts = df_map.to_dict("records")
+        _pt_layer = pdk.Layer(
+            "ScatterplotLayer",
+            data=_pts,
+            get_position="[lon, lat]",
+            get_color=[6, 182, 212, 200],
+            get_radius=40000,
+            pickable=True,
+            auto_highlight=True,
+        )
+        st.markdown(
+            '<div style="border: 1px solid rgba(6, 182, 212, 0.30); '
+            'border-radius: 10px; padding: 6px; '
+            'background: rgba(15, 23, 42, 0.4);">',
+            unsafe_allow_html=True,
+        )
+        st.pydeck_chart(pdk.Deck(
+            layers=[_pt_layer],
+            initial_view_state=pdk.ViewState(
+                latitude=float(df_map["lat"].mean()),
+                longitude=float(df_map["lon"].mean()),
+                zoom=3.0,
+                pitch=0,
+            ),
+            map_style="https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
+            tooltip={"text": "{ip}\n{city}, {country}"},
+        ), use_container_width=True)
+        st.markdown('</div>', unsafe_allow_html=True)
+
     else:
         st.info("No public IP coordinates found. Displaying default threat map overview.")
-        fallback_df = pd.DataFrame([{"lat": 37.7749, "lon": -122.4194}])
-        st.map(fallback_df, latitude="lat", longitude="lon", zoom=2)
+        _fallback_layer = pdk.Layer(
+            "ScatterplotLayer",
+            data=[{"lat": 37.7749, "lon": -122.4194, "ip": "Fallback", "city": "San Francisco", "country": "USA"}],
+            get_position="[lon, lat]",
+            get_color=[6, 182, 212, 200],
+            get_radius=40000,
+        )
+        st.markdown(
+            '<div style="border: 1px solid rgba(6, 182, 212, 0.30); '
+            'border-radius: 10px; padding: 6px; '
+            'background: rgba(15, 23, 42, 0.4);">',
+            unsafe_allow_html=True,
+        )
+        st.pydeck_chart(pdk.Deck(
+            layers=[_fallback_layer],
+            initial_view_state=pdk.ViewState(
+                latitude=20.0,
+                longitude=0.0,
+                zoom=3.0,
+                pitch=0,
+            ),
+            map_style="https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
+        ), use_container_width=True)
+        st.markdown('</div>', unsafe_allow_html=True)
+
 
     st.markdown("---")
     st.markdown("#### Extracted IP & ASN Resolution Table")
@@ -1484,6 +1967,27 @@ with tab5:
 
     st.markdown("---")
     st.markdown("#### Neo4j Campaign Correlation Graph")
+    
+    # --- Campaign Correlation Graph (visual) ---
+    try:
+        _graph_fig = neo4j_engine.generate_plotly_campaign_graph()
+        if _graph_fig is not None:
+            st.markdown(
+                '<div style="border: 1px solid rgba(6, 182, 212, 0.30); '
+                'border-radius: 10px; padding: 6px; '
+                'background: rgba(15, 23, 42, 0.4); margin-bottom: 16px;">',
+                unsafe_allow_html=True,
+            )
+            st.plotly_chart(_graph_fig, width='stretch', config={"displayModeBar": False})
+            st.markdown('</div>', unsafe_allow_html=True)
+            st.caption("Campaign correlation graph — Emails (cyan), Domains (amber), IPs (rose), URLs (purple).")
+        else:
+            st.info(
+                "No campaign graph yet — seed the demo campaign or upload "
+                "2+ emails with shared infrastructure to see correlations."
+            )
+    except Exception as _ge:
+        st.caption(f"Campaign graph unavailable: {type(_ge).__name__}")
 
     neo_status = neo4j_engine.test_connection()
     mode = neo_status.get("mode", "memory")
@@ -1492,9 +1996,9 @@ with tab5:
     badge_color = neo_status.get("status_color", "amber")
     badge_label = neo_status.get("status", "Unknown")
     color_map = {
-        "green": "#16a34a",
-        "amber": "#f59e0b",
-        "red":   "#dc2626",
+        "green": "#10B981",
+        "amber": "#F59E0B",
+        "red":   "#F43F5E",
     }
     hex_color = color_map.get(badge_color, color_map["amber"])
 

@@ -2,6 +2,8 @@ import os
 import logging
 from typing import Dict, List, Any, Optional
 import networkx as nx
+import plotly.graph_objects as go
+from typing import Optional, Any
 
 logger = logging.getLogger("pramaan.neo4j")
 logger.setLevel(logging.ERROR)  # silence expected offline warnings
@@ -9,7 +11,7 @@ logger.setLevel(logging.ERROR)  # silence expected offline warnings
 # Neo4j Environment Configuration
 NEO4J_URI = os.getenv("NEO4J_URI", "bolt://localhost:7687")
 NEO4J_USER = os.getenv("NEO4J_USER", "neo4j")
-NEO4J_PASSWORD = os.getenv("NEO4J_PASSWORD", "pramaan123")
+NEO4J_PASSWORD = os.getenv("NEO4J_PASSWORD", "pramaan_dev")
 
 # Optional Neo4j Driver import
 try:
@@ -367,3 +369,115 @@ def seed_demo_data() -> int:
         )
         count += 1
     return count
+
+
+
+
+def generate_plotly_campaign_graph() -> Optional[Any]:
+    """
+    Build a Plotly node-link diagram of the campaign correlation graph.
+    Returns a Plotly Figure, or None if there is no graph data.
+
+    Node colors:
+      EMAIL  → cyan   #06B6D4
+      DOMAIN → amber  #F59E0B
+      IP     → rose   #F43F5E
+      URL    → purple #A855F7
+    """
+    import networkx as nx
+
+    G = _in_memory_graph
+    if G is None or G.number_of_nodes() < 2:
+        return None
+
+    try:
+        pos = nx.spring_layout(G, k=1.5, iterations=60, seed=42)
+    except Exception:
+        pos = nx.circular_layout(G)
+
+    color_for_type = {
+        "EMAIL":  "#06B6D4",
+        "DOMAIN": "#F59E0B",
+        "IP":     "#F43F5E",
+        "URL":    "#A855F7",
+    }
+
+    edge_x, edge_y = [], []
+    for u, v in G.edges():
+        if u in pos and v in pos:
+            x0, y0 = pos[u]
+            x1, y1 = pos[v]
+            edge_x.extend([x0, x1, None])
+            edge_y.extend([y0, y1, None])
+
+    edge_trace = go.Scatter(
+        x=edge_x, y=edge_y,
+        mode="lines",
+        line=dict(color="rgba(6, 182, 212, 0.35)", width=1.2),
+        hoverinfo="none",
+        showlegend=False,
+    )
+
+    nodes_by_type = {
+        "EMAIL":  {"x": [], "y": [], "text": [], "hover": []},
+        "DOMAIN": {"x": [], "y": [], "text": [], "hover": []},
+        "IP":     {"x": [], "y": [], "text": [], "hover": []},
+        "URL":    {"x": [], "y": [], "text": [], "hover": []},
+    }
+
+    for n, data in G.nodes(data=True):
+        if n not in pos:
+            continue
+        node_type = data.get("type", "UNKNOWN")
+        if node_type not in nodes_by_type:
+            continue
+        x, y = pos[n]
+        label = data.get("label") or data.get("name") or data.get("address") or data.get("url") or str(n)
+        short = label[:50] + "..." if len(str(label)) > 50 else label
+        nodes_by_type[node_type]["x"].append(x)
+        nodes_by_type[node_type]["y"].append(y)
+        nodes_by_type[node_type]["text"].append(short)
+        nodes_by_type[node_type]["hover"].append(f"<b>{node_type}</b><br>{label}")
+
+    node_traces = []
+    for ntype, bucket in nodes_by_type.items():
+        if not bucket["x"]:
+            continue
+        node_traces.append(go.Scatter(
+            x=bucket["x"], y=bucket["y"],
+            mode="markers+text", name=ntype,
+            marker=dict(
+                size=14 if ntype == "EMAIL" else 11,
+                color=color_for_type[ntype],
+                line=dict(color="#0F172A", width=1.5),
+            ),
+            text=bucket["text"],
+            textposition="top center",
+            textfont=dict(family="JetBrains Mono, monospace", size=9, color="#94A3B8"),
+            hovertext=bucket["hover"],
+            hoverinfo="text",
+            showlegend=True,
+        ))
+
+    if not node_traces:
+        return None
+
+    fig = go.Figure(data=[edge_trace] + node_traces)
+    fig.update_layout(
+        height=520,
+        margin=dict(l=10, r=10, t=10, b=10),
+        paper_bgcolor="rgba(15, 23, 42, 0.4)",
+        plot_bgcolor="rgba(15, 23, 42, 0.4)",
+        showlegend=True,
+        legend=dict(
+            orientation="h", yanchor="bottom", y=1.02,
+            xanchor="left", x=0,
+            font=dict(family="Inter, sans-serif", size=11, color="#E2E8F0"),
+            bgcolor="rgba(15, 23, 42, 0.6)",
+            bordercolor="rgba(6, 182, 212, 0.30)", borderwidth=1,
+        ),
+        font=dict(family="Inter, sans-serif", color="#E2E8F0"),
+        xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+        yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+    )
+    return fig
