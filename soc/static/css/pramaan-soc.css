@@ -1,4 +1,10 @@
 :root {
+
+--soc-bg: #070D14;
+  --soc-card-bg: #0F172A;
+  --soc-border: rgba(6, 182, 212, 0.20);
+  --soc-accent: #06B6D4;
+  --soc-font-body: 'Inter', sans-serif;
   --soc-bg: #0a0e14;
   --soc-surface: #0d1117;
   --soc-surface-raised: #161b22;
@@ -26,6 +32,7 @@
   --soc-spacing-5: 20px;
   --soc-spacing-6: 24px;
 }
+
 
 /* Base: restrained SOC surface with color reserved for meaning. */
 html,

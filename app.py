@@ -1169,7 +1169,7 @@ with st.sidebar:
     selected_tab = st.radio(
         "NAVIGATION",
         ["Triage Overview", "Auth & Content", "Relay & Route",
-         "IP & Domain Intel"],
+         "IP & Domain Intel", "Content & URL"],
         label_visibility="collapsed",
         key="main_nav",
     )
