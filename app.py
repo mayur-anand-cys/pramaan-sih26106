@@ -981,11 +981,14 @@ if raw_bytes is None:
         _up1, _up2, _up3 = st.columns([1, 2, 1])
         with _up2:
             uploaded_landing = st.file_uploader(
-                "Upload .eml file",
-                type=["eml"],
-                key="landing_upload",
-                label_visibility="collapsed",
-            )
+                    if uploaded_landing is not None:
+        file_bytes = uploaded_landing.getvalue()
+        if len(file_bytes) > 10 * 1024 * 1024:  # 10 MB limit
+            st.error("File exceeds the 10 MB limit. Please upload a smaller .eml file.")
+            st.stop()
+        st.session_state["raw_bytes"] = file_bytes
+        st.session_state["file_name"] = uploaded_landing.name
+        st.rerun()
         st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
         if _user:
             _uname = _user.get("username", "unknown")
@@ -1093,8 +1096,8 @@ if xai_result.get("has_contradiction"):
 zkfv_proof = zkfv.generate_evidence_proof(raw_bytes)
 merkle_root = zkfv_proof["merkle_root"]
 
-# IP Geolocation Processing
-geo_results = [geolocate_ip(item["ip"]) for item in ips]
+from threat_intel import batch_geolocate_ips
+geo_results = batch_geolocate_ips([item["ip"] for item in ips])
 
 # Semantic Risk Coloring
 if risk_score >= 65:
