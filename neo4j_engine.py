@@ -384,7 +384,6 @@ def generate_plotly_campaign_graph() -> Optional[Any]:
       IP     → rose   #F43F5E
       URL    → purple #A855F7
     """
-    import networkx as nx
 
     G = _in_memory_graph
     if G is None or G.number_of_nodes() < 2:

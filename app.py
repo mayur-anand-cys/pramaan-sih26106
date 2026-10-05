@@ -39,7 +39,6 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="collapsed"
 )
-from pathlib import Path
 css_path = Path(__file__).parent / "soc" / "static" / "css" / "pramaan-soc.css"
 if css_path.exists():
     st.markdown(f"<style>{css_path.read_text(encoding='utf-8')}</style>", unsafe_allow_html=True)
@@ -1173,7 +1172,7 @@ with st.sidebar:
     selected_tab = st.radio(
         "NAVIGATION",
         ["Triage Overview", "Auth & Content", "Relay & Route",
-         "IP & Domain Intel"],
+         "IP & Domain Intel", "Content & URL"],
         label_visibility="collapsed",
         key="main_nav",
     )
