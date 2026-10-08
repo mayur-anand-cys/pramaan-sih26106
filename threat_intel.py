@@ -238,6 +238,15 @@ def geolocate_ip_cached(ip: str, cache: Dict[str, dict] = None) -> Dict[str, Any
     """
     Geolocate IPv4 address using public IP API with local caching & private IP validation.
     """
+
+    # --- DEMO_MODE: return fixture instead of hitting ip-api.com ---
+    try:
+        from backend.demo.fixtures import demo_mode_enabled, get_demo_geo
+        if demo_mode_enabled():
+            return get_demo_geo(ip)
+    except Exception:
+        pass
+
     if cache is not None and ip in cache:
         return cache[ip]
 

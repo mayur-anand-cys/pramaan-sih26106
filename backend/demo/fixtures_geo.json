@@ -1,0 +1,73 @@
+{
+  "_comment": "Pre-computed geolocations for DEMO_MODE. Keyed by IP.",
+  "203.0.113.10": {
+    "ip": "203.0.113.10",
+    "status": "success",
+    "country": "Russia",
+    "city": "Moscow",
+    "isp": "PTR Demo Hosting",
+    "asn": "AS64496",
+    "lat": 55.7558,
+    "lon": 37.6173
+  },
+  "203.0.113.11": {
+    "ip": "203.0.113.11",
+    "status": "success",
+    "country": "Netherlands",
+    "city": "Amsterdam",
+    "isp": "Demo VPS",
+    "asn": "AS64500",
+    "lat": 52.3740,
+    "lon": 4.8897
+  },
+  "203.0.113.12": {
+    "ip": "203.0.113.12",
+    "status": "success",
+    "country": "United States",
+    "city": "Ashburn",
+    "isp": "Demo Cloud",
+    "asn": "AS64501",
+    "lat": 39.0438,
+    "lon": -77.4874
+  },
+  "45.33.32.156": {
+    "ip": "45.33.32.156",
+    "status": "success",
+    "country": "United States",
+    "city": "Fremont",
+    "isp": "Linode",
+    "asn": "AS63949",
+    "lat": 37.5483,
+    "lon": -121.9886
+  },
+  "104.18.32.7": {
+    "ip": "104.18.32.7",
+    "status": "success",
+    "country": "United States",
+    "city": "San Francisco",
+    "isp": "Cloudflare",
+    "asn": "AS13335",
+    "lat": 37.7749,
+    "lon": -122.4194
+  },
+  "185.199.108.153": {
+    "ip": "185.199.108.153",
+    "status": "success",
+    "country": "United States",
+    "city": "San Francisco",
+    "isp": "GitHub",
+    "asn": "AS36459",
+    "lat": 37.7749,
+    "lon": -122.4194
+  },
+  "8.8.8.8": {
+    "ip": "8.8.8.8",
+    "status": "success",
+    "country": "United States",
+    "city": "Mountain View",
+    "isp": "Google",
+    "asn": "AS15169",
+    "lat": 37.3860,
+    "lon": -122.0838
+  }
+}

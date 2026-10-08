@@ -82,6 +82,14 @@ def compute_sha256(file_bytes: bytes) -> str:
 # IP Geolocation Helper
 @st.cache_data(ttl=3600)
 def geolocate_ip(ip: str) -> dict:
+    # --- DEMO_MODE: return fixture instead of hitting ip-api.com ---
+    try:
+        from backend.demo.fixtures import demo_mode_enabled, get_demo_geo
+        if demo_mode_enabled():
+            return get_demo_geo(ip)
+    except Exception:
+        pass
+
     try:
         ip_obj = ipaddress.ip_address(ip)
         if ip_obj.is_private or ip_obj.is_loopback or ip_obj.is_reserved:
