@@ -31,6 +31,7 @@ from backend.detection.xai import (
 )
 
 from security_hardening import extract_headers_with_forensics
+from backend.detection.display_name_obfuscation import scan_display_name
 
 # Page Configuration
 st.set_page_config(
@@ -695,6 +696,25 @@ for _anomaly in header_forensics.get("header_injection_anomalies", []):
         "description": _anomaly["explanation"],
     })
     risk_score = min(100, risk_score + _anomaly["risk_modifier"])
+
+# Display name obfuscation scan (Issue #140)
+try:
+    from_name = str(msg.get("From", ""))
+    import re as _re
+    _match = _re.match(r'^"?([^"<]*?)"?\s*<', from_name)
+    display_name = _match.group(1).strip() if _match else from_name.strip()
+
+    if display_name:
+        obf_result = scan_display_name(display_name)
+        if obf_result["risk_modifier"] > 0:
+            risk_factors.append({
+                "category": "Font Obfuscation",
+                "points": obf_result["risk_modifier"],
+                "description": obf_result["explanation"],
+            })
+            risk_score = min(100, risk_score + obf_result["risk_modifier"])
+except Exception:
+    pass  # Never break the pipeline for a display-name scan
 
 
 # Email Authentication & XAI Contradiction Analysis
