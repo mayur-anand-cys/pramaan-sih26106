@@ -1,4 +1,4 @@
-# 🛡️ PRAMAAN
+﻿# 🛡️ PRAMAAN
 
 ![Tests](https://github.com/mayur-anand-cys/pramaan-sih26106/actions/workflows/test.yml/badge.svg)
 ![License](https://img.shields.io/badge/License-MIT-yellow.svg)
@@ -345,3 +345,22 @@ MIT License — see [LICENSE](LICENSE) for details.
 - [Contributing Guide](CONTRIBUTING.md)
 - [Code of Conduct](CODE_OF_CONDUCT.md)
 - [Security Policy](SECURITY.md)
+
+## DEMO_MODE
+
+Set `PRAMAAN_DEMO_MODE=true` to run the dashboard in offline demo mode. When
+enabled, IP geolocation calls to `ip-api.com` are bypassed and pre-computed
+fixtures from `backend/demo/fixtures_geo.json` are returned instead.
+
+Use this for:
+- Offline demos (no network dependency)
+- Deterministic results for presentations
+- Avoiding rate limits on the free `ip-api.com` tier
+
+Example (Windows CMD):
+    set PRAMAAN_DEMO_MODE=true && streamlit run app.py
+
+Example (bash):
+    PRAMAAN_DEMO_MODE=true streamlit run app.py
+
+When disabled (default), the app uses the live `ip-api.com` API.
