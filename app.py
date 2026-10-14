@@ -373,6 +373,9 @@ with st.sidebar:
     use_sample = st.checkbox(" Use Sample Phishing EML", value=False)
     uploaded_file = st.file_uploader("Upload .eml File", type=["eml"])
 
+    st.markdown("### Live Inbox")
+    st.markdown("**Connect Live Inbox (OAuth)**")
+    st.caption("Gmail / M365 integration coming in Sprint 3")
     st.markdown("---")
     if _user:
         st.caption(f"Signed in as **{_user.get('username', 'unknown')}** ({_role})")
