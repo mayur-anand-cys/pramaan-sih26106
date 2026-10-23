@@ -22,6 +22,7 @@ import graph_engine
 import neo4j_engine
 from report_gen import generate_pdf_report
 from backend.detection.auth_check import verify_email_auth
+from backend.intel.aggregator import enrich_sync
 from backend.detection.body_header_check import detect_body_header_spoofing
 from backend.detection.xai import (
     detect_contradictions,
@@ -1516,7 +1517,69 @@ with tab5:
             st.markdown(f"**Configured user:** `{neo_status.get('user', 'neo4j')}`")
             st.caption("After starting Neo4j, refresh this page.")
         st.caption(neo_status.get("message", ""))
+        
+    # --- Threat Intel Enrichment (Issue #136) ---
+    st.markdown("#### Threat Intel Enrichment")
+    st.caption("Live enrichment of extracted IPs and domains via 9 external threat intel providers.")
 
+    intel_targets = []
+    for item in (ips or [])[:5]:
+        if isinstance(item, dict) and item.get("ip") and not item.get("is_private"):
+            intel_targets.append(item["ip"])
+    for url in (urls or [])[:3]:
+        try:
+            from urllib.parse import urlparse
+            host = urlparse(url if "://" in url else f"http://{url}").hostname
+            if host and host not in intel_targets:
+                intel_targets.append(host)
+        except Exception:
+            pass
+
+    if not intel_targets:
+        st.info("No public IPs or domains extracted from this email — nothing to enrich.")
+    else:
+        if st.button("Run Threat Intel Enrichment", key="run_intel_btn", use_container_width=True):
+            rows = []
+            progress = st.progress(0, text="Enriching indicators...")
+            for i, target in enumerate(intel_targets, 1):
+                try:
+                    result = enrich_sync(target)
+                    summary = result.get("summary", {})
+                    rows.append({
+                        "Indicator": target,
+                        "Type": result.get("indicator_type", "unknown"),
+                        "Verdict": result.get("verdict", "unknown"),
+                        "Score": result.get("threat_score", 0),
+                        "Tags": ", ".join(result.get("tags", [])) or "—",
+                        "Providers Live": f"{summary.get('live', 0)}/{summary.get('total', 0)}",
+                        "Latency (ms)": result.get("total_duration_ms", 0),
+                    })
+                except Exception as e:
+                    rows.append({
+                        "Indicator": target,
+                        "Type": "error",
+                        "Verdict": "error",
+                        "Score": 0,
+                        "Tags": str(e)[:60],
+                        "Providers Live": "0/0",
+                        "Latency (ms)": 0,
+                    })
+                progress.progress(i / len(intel_targets), text=f"Enriched {i}/{len(intel_targets)}")
+
+            progress.empty()
+            if rows:
+                df_intel = pd.DataFrame(rows)
+                st.dataframe(df_intel, width='stretch', hide_index=True)
+                st.caption(
+                    "Providers marked 'unavailable' need API keys in `.env`. "
+                    "DNS Resolver + RDAP run without keys."
+                )
+        else:
+            st.caption(f"Ready to enrich **{len(intel_targets)}** indicator(s). Click the button to start.")
+
+    st.markdown("---")
+
+    # --- Campaigns ---
     # --- Campaigns ---
     campaigns = neo4j_engine.correlate_campaigns()
     email_count = 0
