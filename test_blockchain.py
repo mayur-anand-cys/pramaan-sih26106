@@ -18,14 +18,13 @@ def main():
     print("="*60)
 
     # 1. Status
-    status = blockchain_status()
     print(f"\nBlockchain status:")
-    for k, v in status.items():
-        # Redact rpc_url — it may contain an API key
-        if k == "rpc_url":
-            print(f"   {k}: [REDACTED]")
-        else:
-            print(f"   {k}: {v}")
+    # Only print non-sensitive fields explicitly — never the rpc_url
+    _safe_keys = ("status", "mode", "connected", "contract_configured",
+                  "signer_configured", "driver_available", "fallback_mode", "user")
+    for _k in _safe_keys:
+        if _k in status:
+            print(f"   {_k}: {status[_k]}")
     # 2. Build Merkle tree
     sample_analysis = {
         "sha256": "a" * 64,
