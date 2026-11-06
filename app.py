@@ -1480,6 +1480,69 @@ with tab5:
         st.caption("No IP addresses extracted.")
 
     st.markdown("---")
+    st.markdown("#### One-Click Response Actions")
+    st.caption(
+        "Download ready-to-run defensive artifacts for the extracted IPs. "
+        "All formats dedupe and skip empty values."
+    )
+
+    _resp_ips = [g.get("ip", "") for g in geo_results if g.get("ip")]
+    if _resp_ips:
+        try:
+            from backend.reporting.soar_export import (
+                generate_firewall_rules,
+                generate_pfsense_rules,
+                generate_csv,
+            )
+
+            _fw_script = generate_firewall_rules(_resp_ips)
+            _pf_script = generate_pfsense_rules(_resp_ips)
+            _csv_rows = [
+                {
+                    "ip": g.get("ip", ""),
+                    "asn": g.get("asn", ""),
+                    "country": g.get("country", ""),
+                    "risk_score": risk_score,
+                }
+                for g in geo_results
+                if g.get("ip")
+            ]
+            _csv_text = generate_csv(_csv_rows)
+
+            _btn1, _btn2, _btn3 = st.columns(3)
+            with _btn1:
+                st.download_button(
+                    label="Download Firewall Script (bash)",
+                    data=_fw_script,
+                    file_name="pramaan_block.sh",
+                    mime="text/x-shellscript",
+                    use_container_width=True,
+                    key="dl_firewall_btn",
+                )
+            with _btn2:
+                st.download_button(
+                    label="Download pfSense Commands",
+                    data=_pf_script,
+                    file_name="pramaan_pfsense.txt",
+                    mime="text/plain",
+                    use_container_width=True,
+                    key="dl_pfsense_btn",
+                )
+            with _btn3:
+                st.download_button(
+                    label="Download IOC CSV",
+                    data=_csv_text,
+                    file_name="pramaan_iocs.csv",
+                    mime="text/csv",
+                    use_container_width=True,
+                    key="dl_csv_btn",
+                )
+        except Exception as _resp_err:
+            st.warning(f"Response action generation failed: {_resp_err}")
+    else:
+        st.caption("No IPs available for response actions.")
+
+    st.markdown("---")
     st.markdown("#### Neo4j Campaign Correlation Graph")
 
     neo_status = neo4j_engine.test_connection()
