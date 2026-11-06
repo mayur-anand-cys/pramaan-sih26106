@@ -1,4 +1,4 @@
-"""PRAMAAN blockchain anchor — Web3.py + Sepolia."""
+﻿"""PRAMAAN blockchain anchor â€” Web3.py + Sepolia."""
 import os
 import json
 import logging
@@ -13,12 +13,26 @@ except ImportError:
 
 logger = logging.getLogger("pramaan.blockchain")
 
-SEPOLIA_RPC_URL = os.getenv(
-    "SEPOLIA_RPC_URL",
-    "https://ethereum-sepolia-rpc.publicnode.com"
+from backend.secrets.aws import get_secret_value
+
+BLOCKCHAIN_RPC_URL = get_secret_value(
+    "pramaan/blockchain",
+    "rpc_url",
+    "BLOCKCHAIN_RPC_URL",
+    "https://eth-sepolia.g.alchemy.com/v2/YOUR_KEY",
 )
-ANALYST_PRIVATE_KEY = os.getenv("ANALYST_PRIVATE_KEY", "")
-CONTRACT_ADDRESS = os.getenv("PRAMAAN_CONTRACT_ADDRESS", "")
+ANALYST_PRIVATE_KEY = get_secret_value(
+    "pramaan/blockchain",
+    "private_key",
+    "ANALYST_PRIVATE_KEY",
+    "",
+)
+CONTRACT_ADDRESS = get_secret_value(
+    "pramaan/blockchain",
+    "contract_address",
+    "PRAMAAN_CONTRACT_ADDRESS",
+    "",
+)
 CONTRACT_ABI_JSON = os.getenv("PRAMAAN_CONTRACT_ABI", "")
 
 
@@ -78,7 +92,7 @@ def _get_web3() -> Optional[Any]:
     if not WEB3_AVAILABLE:
         return None
     try:
-        w3 = Web3(Web3.HTTPProvider(SEPOLIA_RPC_URL, request_kwargs={"timeout": 10}))
+        w3 = Web3(Web3.HTTPProvider(BLOCKCHAIN_RPC_URL, request_kwargs={"timeout": 10}))
         if not w3.is_connected():
             return None
         return w3
@@ -117,7 +131,7 @@ def anchor_evidence(
             "tx_hash": f"0x_simulated_{case_id[:8]}_{merkle_root[:8]}",
             "block_number": None,
             "explorer_url": None,
-            "note": "Blockchain not configured. Set SEPOLIA_RPC_URL, ANALYST_PRIVATE_KEY, PRAMAAN_CONTRACT_ADDRESS for real anchor.",
+            "note": "Blockchain not configured. Set BLOCKCHAIN_RPC_URL, ANALYST_PRIVATE_KEY, PRAMAAN_CONTRACT_ADDRESS for real anchor.",
         }
 
     try:
@@ -216,8 +230,9 @@ def blockchain_status() -> Dict[str, Any]:
     return {
         "web3_available": WEB3_AVAILABLE,
         "connected": w3 is not None,
-        "rpc_url": SEPOLIA_RPC_URL if w3 else None,
+        "rpc_url": BLOCKCHAIN_RPC_URL if w3 else None,
         "contract_configured": bool(CONTRACT_ADDRESS),
         "signer_configured": bool(ANALYST_PRIVATE_KEY),
         "mode": "LIVE" if (w3 and CONTRACT_ADDRESS and ANALYST_PRIVATE_KEY) else "SIMULATED",
     }
+
