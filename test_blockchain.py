@@ -19,10 +19,13 @@ def main():
 
     # 1. Status
     status = blockchain_status()
-    print(f"\n📡 Blockchain status:")
+    print(f"\nBlockchain status:")
     for k, v in status.items():
-        print(f"   {k}: {v}")
-
+        # Redact rpc_url — it may contain an API key
+        if k == "rpc_url":
+            print(f"   {k}: [REDACTED]")
+        else:
+            print(f"   {k}: {v}")
     # 2. Build Merkle tree
     sample_analysis = {
         "sha256": "a" * 64,
@@ -34,14 +37,14 @@ def main():
     }
 
     merkle = build_evidence_merkle_root(sample_analysis)
-    print(f"\n🌳 Merkle tree built:")
+    print(f"\nðŸŒ³ Merkle tree built:")
     print(f"   Root: {merkle['merkle_root']}")
     print(f"   Leaves: {merkle['leaf_count']}")
     print(f"   Depth: {merkle['levels']}")
 
     # 3. Anchor
     case_id = "PRAMAAN-TEST-001"
-    print(f"\n⛓️  Anchoring case {case_id}...")
+    print(f"\nâ›“ï¸  Anchoring case {case_id}...")
     anchor_result = anchor_evidence(
         case_id=case_id,
         merkle_root=merkle["merkle_root"],
@@ -56,13 +59,13 @@ def main():
         print(f"   Explorer: {anchor_result['explorer_url']}")
 
     # 4. Verify
-    print(f"\n🔍 Verifying case {case_id}...")
+    print(f"\nðŸ” Verifying case {case_id}...")
     verify_result = verify_evidence(case_id, merkle["merkle_root"])
     print(f"   Verified: {verify_result.get('verified')}")
     print(f"   Storage: {verify_result['storage']}")
 
     print("\n" + "="*60)
-    print("✅ Test complete")
+    print("âœ… Test complete")
     print("="*60 + "\n")
 
 
